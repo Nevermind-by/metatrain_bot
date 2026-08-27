@@ -78,6 +78,13 @@ async def delete_set(set_id: int, telegram_id: int = Depends(current_telegram_id
     return {"deleted": True}
 
 
+@router.get("/progress/{exercise_name}")
+async def progress(exercise_name: str, telegram_id: int = Depends(current_telegram_id)):
+    user = await get_user(telegram_id)
+    result = await service.progress(user.id, exercise_name)
+    return {"exercise": result["exercise"], "best_weight": result["best_weight"], "best_volume": result["best_volume"], "estimated_1rm": result["estimated_1rm"], "sets": [item.__dict__ for item in result["sets"]]}
+
+
 @router.get("/{workout_id}")
 async def workout(workout_id: int, telegram_id: int = Depends(current_telegram_id)):
     user = await get_user(telegram_id)
@@ -86,10 +93,3 @@ async def workout(workout_id: int, telegram_id: int = Depends(current_telegram_i
         raise HTTPException(status_code=404, detail="Workout not found")
     exercises = await service.repository.exercises_with_sets_for_workout(workout_id)
     return {"workout": item.__dict__, "exercises": [{"exercise": exercise.__dict__, "sets": [workout_set.__dict__ for workout_set in sets]} for exercise, sets in exercises]}
-
-
-@router.get("/progress/{exercise_name}")
-async def progress(exercise_name: str, telegram_id: int = Depends(current_telegram_id)):
-    user = await get_user(telegram_id)
-    result = await service.progress(user.id, exercise_name)
-    return {"exercise": result["exercise"], "best_weight": result["best_weight"], "best_volume": result["best_volume"], "estimated_1rm": result["estimated_1rm"], "sets": [item.__dict__ for item in result["sets"]]}
