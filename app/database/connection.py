@@ -47,10 +47,16 @@ async def init_database() -> None:
             FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE)""")
         await connection.execute("""CREATE TABLE IF NOT EXISTS food_entries (
             id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, meal TEXT NOT NULL,
-            product_name TEXT NOT NULL, grams REAL NOT NULL CHECK (grams > 0), calories REAL NOT NULL CHECK (calories >= 0),
-            protein REAL NOT NULL CHECK (protein >= 0), fat REAL NOT NULL CHECK (fat >= 0),
-            carbohydrates REAL NOT NULL CHECK (carbohydrates >= 0), eaten_at TEXT NOT NULL,
+            product_name TEXT NOT NULL, quantity REAL NOT NULL CHECK (quantity > 0), unit TEXT NOT NULL DEFAULT 'g',
+            calories REAL NOT NULL CHECK (calories >= 0), protein REAL NOT NULL CHECK (protein >= 0),
+            fat REAL NOT NULL CHECK (fat >= 0), carbohydrates REAL NOT NULL CHECK (carbohydrates >= 0), eaten_at TEXT NOT NULL,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE)""")
+        columns = await connection.execute_fetchall("PRAGMA table_info(food_entries)")
+        column_names = {row[1] for row in columns}
+        if "quantity" not in column_names:
+            await connection.execute("ALTER TABLE food_entries ADD COLUMN quantity REAL NOT NULL DEFAULT 100")
+        if "unit" not in column_names:
+            await connection.execute("ALTER TABLE food_entries ADD COLUMN unit TEXT NOT NULL DEFAULT 'g'")
         await connection.execute("""CREATE TABLE IF NOT EXISTS weight_entries (
             id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL,
             weight_kg REAL NOT NULL CHECK (weight_kg >= 30 AND weight_kg <= 300), measured_at TEXT NOT NULL,
