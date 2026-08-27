@@ -68,6 +68,69 @@ async def edit_gender_handler(callback: CallbackQuery, state: FSMContext) -> Non
     await _save_edited_field(callback, state, "gender", gender)
 
 
+@router.callback_query(F.data == "profile:edit:age")
+async def edit_age_callback(callback: CallbackQuery, state: FSMContext) -> None:
+    await state.set_state(ProfileStates.edit_age)
+    if callback.message is not None:
+        await callback.message.edit_text("Введи новый возраст (14–100 лет).")
+    await callback.answer()
+
+
+@router.message(ProfileStates.edit_age)
+async def edit_age_handler(message: Message, state: FSMContext) -> None:
+    try:
+        age = int(message.text or "")
+    except ValueError:
+        await message.answer("Введи возраст целым числом, например: 28")
+        return
+    if not 14 <= age <= 100:
+        await message.answer("Возраст должен быть от 14 до 100 лет.")
+        return
+    await _save_edited_message_field(message, state, "age", age)
+
+
+@router.callback_query(F.data == "profile:edit:height")
+async def edit_height_callback(callback: CallbackQuery, state: FSMContext) -> None:
+    await state.set_state(ProfileStates.edit_height)
+    if callback.message is not None:
+        await callback.message.edit_text("Введи новый рост в сантиметрах (120–230).")
+    await callback.answer()
+
+
+@router.message(ProfileStates.edit_height)
+async def edit_height_handler(message: Message, state: FSMContext) -> None:
+    try:
+        height = float((message.text or "").replace(",", "."))
+    except ValueError:
+        await message.answer("Введи рост числом, например: 180")
+        return
+    if not 120 <= height <= 230:
+        await message.answer("Рост должен быть от 120 до 230 см.")
+        return
+    await _save_edited_message_field(message, state, "height_cm", height)
+
+
+@router.callback_query(F.data == "profile:edit:weight")
+async def edit_weight_callback(callback: CallbackQuery, state: FSMContext) -> None:
+    await state.set_state(ProfileStates.edit_weight)
+    if callback.message is not None:
+        await callback.message.edit_text("Введи новый вес в килограммах (30–300).")
+    await callback.answer()
+
+
+@router.message(ProfileStates.edit_weight)
+async def edit_weight_handler(message: Message, state: FSMContext) -> None:
+    try:
+        weight = float((message.text or "").replace(",", "."))
+    except ValueError:
+        await message.answer("Введи вес числом, например: 80")
+        return
+    if not 30 <= weight <= 300:
+        await message.answer("Вес должен быть от 30 до 300 кг.")
+        return
+    await _save_edited_message_field(message, state, "weight_kg", weight)
+
+
 @router.callback_query(F.data == "profile:edit:activity")
 async def edit_activity_callback(callback: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(ProfileStates.edit_activity_level)
@@ -102,11 +165,13 @@ async def edit_goal_handler(callback: CallbackQuery, state: FSMContext) -> None:
     await _save_edited_field(callback, state, "goal", goal)
 
 
-async def _save_edited_field(callback: CallbackQuery, state: FSMContext, field: str, value: object) -> None:
-    profile = await _load_profile(callback.from_user.id)
+async def _save_values(telegram_id: int, field: str, value: object):
+    user = await user_service.get_by_telegram_id(telegram_id)
+    if user is None or user.id is None:
+        raise LookupError("User not found")
+    profile = await profile_service.get_profile(user.id)
     if profile is None:
-        await callback.answer("Профиль не найден", show_alert=True)
-        return
+        raise LookupError("Profile not found")
     values = {
         "gender": profile.gender,
         "age": profile.age,
@@ -116,12 +181,27 @@ async def _save_edited_field(callback: CallbackQuery, state: FSMContext, field: 
         "goal": profile.goal,
     }
     values[field] = value
-    user = await user_service.get_by_telegram_id(callback.from_user.id)
-    if user is None or user.id is None:
-        await callback.answer("Пользователь не найден", show_alert=True)
+    return await profile_service.update_profile(user.id, **values)
+
+
+async def _save_edited_field(callback: CallbackQuery, state: FSMContext, field: str, value: object) -> None:
+    try:
+        updated = await _save_values(callback.from_user.id, field, value)
+    except LookupError as error:
+        await callback.answer(str(error), show_alert=True)
         return
-    updated = await profile_service.update_profile(user.id, **values)
     await state.clear()
     if callback.message is not None:
         await callback.message.edit_text("Профиль обновлён ✅\n\n" + profile_service.format_profile(updated), reply_markup=profile_keyboard())
     await callback.answer()
+
+
+async def _save_edited_message_field(message: Message, state: FSMContext, field: str, value: object) -> None:
+    try:
+        updated = await _save_values(message.from_user.id, field, value)
+    except LookupError as error:
+        await message.answer(str(error))
+        await state.clear()
+        return
+    await state.clear()
+    await message.answer("Профиль обновлён ✅\n\n" + profile_service.format_profile(updated), reply_markup=profile_keyboard())
