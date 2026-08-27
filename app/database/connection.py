@@ -56,4 +56,21 @@ async def init_database() -> None:
             await connection.execute(
                 "ALTER TABLE user_profiles ADD COLUMN activity_level TEXT NOT NULL DEFAULT 'sedentary'"
             )
+        await connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS food_entries (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                meal TEXT NOT NULL,
+                product_name TEXT NOT NULL,
+                grams REAL NOT NULL CHECK (grams > 0),
+                calories REAL NOT NULL CHECK (calories >= 0),
+                protein REAL NOT NULL CHECK (protein >= 0),
+                fat REAL NOT NULL CHECK (fat >= 0),
+                carbohydrates REAL NOT NULL CHECK (carbohydrates >= 0),
+                eaten_at TEXT NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+            """
+        )
         await connection.commit()
