@@ -7,7 +7,7 @@ class ProfileStates(StatesGroup):
 
 
 class FoodStates(StatesGroup):
-    meal = State(); product_name = State(); grams = State(); calories = State(); protein = State(); fat = State(); carbohydrates = State()
+    meal = State(); product_name = State(); grams = State(); calories = State(); protein = State(); fat = State(); carbohydrates = State(); recipe = State()
 
 
 class ProductStates(StatesGroup):
@@ -23,4 +23,4 @@ class WeightStates(StatesGroup):
 
 
 class WorkoutStates(StatesGroup):
-    name = State(); duration = State(); calories = State(); notes = State()
+    name = State(); exercise = State(); weight = State(); reps = State(); rpe = State()
