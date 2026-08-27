@@ -14,6 +14,10 @@ class ProductStates(StatesGroup):
     name = State(); calories = State(); protein = State(); fat = State(); carbohydrates = State()
 
 
+class RecipeStates(StatesGroup):
+    name = State(); servings = State(); product = State(); grams = State()
+
+
 class WeightStates(StatesGroup):
     value = State()
 
