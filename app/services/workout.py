@@ -9,37 +9,34 @@ class WorkoutService:
         self.repository = repository or WorkoutRepository()
 
     async def start(self, *, user_id: int, name: str, notes: str | None = None) -> WorkoutEntry:
-        if not name.strip():
-            raise ValueError("Workout name is required")
+        if not name.strip(): raise ValueError("Workout name is required")
         return await self.repository.create(WorkoutEntry(None, user_id, name.strip(), None, None, notes.strip() if notes else None, datetime.now(timezone.utc)))
 
     async def add_exercise(self, *, workout_id: int, name: str, position: int) -> WorkoutExercise:
-        if not name.strip() or position < 1:
-            raise ValueError("Invalid exercise")
+        if not name.strip() or position < 1: raise ValueError("Invalid exercise")
         return await self.repository.add_exercise(WorkoutExercise(None, workout_id, name.strip(), position))
 
     async def add_set(self, *, exercise_id: int, set_number: int, weight_kg: float, reps: int, rpe: float | None = None) -> WorkoutSet:
-        if set_number < 1 or weight_kg < 0 or reps < 1 or (rpe is not None and not 1 <= rpe <= 10):
-            raise ValueError("Invalid set")
+        if set_number < 1 or weight_kg < 0 or reps < 1 or (rpe is not None and not 1 <= rpe <= 10): raise ValueError("Invalid set")
         return await self.repository.add_set(WorkoutSet(None, exercise_id, set_number, weight_kg, reps, rpe))
 
     async def recent(self, user_id: int, limit: int = 10) -> list[WorkoutEntry]:
         return await self.repository.recent(user_id, limit)
+
+    async def get_workout_for_user(self, workout_id: int, user_id: int) -> WorkoutEntry | None:
+        return await self.repository.get_workout_for_user(workout_id, user_id)
+
+    async def get_exercise_for_user(self, exercise_id: int, user_id: int) -> WorkoutExercise | None:
+        return await self.repository.get_exercise_for_user(exercise_id, user_id)
 
     async def exercise_history(self, user_id: int, exercise_name: str, limit: int = 10) -> list[WorkoutSet]:
         return await self.repository.exercise_history(user_id, exercise_name, limit)
 
     async def progress(self, user_id: int, exercise_name: str, limit: int = 20) -> dict:
         sets = await self.repository.exercise_history(user_id, exercise_name, limit)
-        if not sets:
-            return {"exercise": exercise_name, "sets": [], "best_weight": 0, "best_volume": 0, "estimated_1rm": 0}
+        if not sets: return {"exercise": exercise_name, "sets": [], "best_weight": 0, "best_volume": 0, "estimated_1rm": 0}
         best_weight = max(item.weight_kg for item in sets)
         best_volume = max(item.weight_kg * item.reps for item in sets)
-        estimated_1rm = max(item.weight_kg * (1 + item.reps / 30) for item in sets if item.weight_kg > 0)
-        return {
-            "exercise": exercise_name,
-            "sets": sets,
-            "best_weight": round(best_weight, 1),
-            "best_volume": round(best_volume, 1),
-            "estimated_1rm": round(estimated_1rm, 1),
-        }
+        weighted_sets = [item.weight_kg * (1 + item.reps / 30) for item in sets if item.weight_kg > 0]
+        estimated_1rm = max(weighted_sets, default=0)
+        return {"exercise": exercise_name, "sets": sets, "best_weight": round(best_weight, 1), "best_volume": round(best_volume, 1), "estimated_1rm": round(estimated_1rm, 1)}
