@@ -9,6 +9,7 @@ class UserProfile:
     age: int
     height_cm: float
     weight_kg: float
+    activity_level: str
     goal: str
     calories: int
     protein: int
