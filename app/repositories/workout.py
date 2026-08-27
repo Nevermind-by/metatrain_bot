@@ -71,6 +71,12 @@ class WorkoutRepository:
             row = await cursor.fetchone()
         return WorkoutExercise(row["id"], row["workout_id"], row["name"], row["position"]) if row else None
 
+    async def get_set_for_user(self, set_id: int, user_id: int) -> WorkoutSet | None:
+        async with await get_connection() as connection:
+            cursor = await connection.execute("SELECT s.* FROM workout_sets s JOIN workout_exercises e ON e.id=s.exercise_id JOIN workout_entries w ON w.id=e.workout_id WHERE s.id=? AND w.user_id=?", (set_id, user_id))
+            row = await cursor.fetchone()
+        return WorkoutSet(row["id"], row["exercise_id"], row["set_number"], row["weight_kg"], row["reps"], row["rpe"]) if row else None
+
     async def exercises_for_workout(self, workout_id: int) -> list[WorkoutExercise]:
         async with await get_connection() as connection:
             cursor = await connection.execute("SELECT * FROM workout_exercises WHERE workout_id=? ORDER BY position", (workout_id,))
