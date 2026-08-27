@@ -29,4 +29,23 @@ async def init_database() -> None:
             )
             """
         )
+        await connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS user_profiles (
+                user_id INTEGER PRIMARY KEY,
+                gender TEXT NOT NULL,
+                age INTEGER NOT NULL,
+                height_cm REAL NOT NULL,
+                weight_kg REAL NOT NULL,
+                goal TEXT NOT NULL,
+                calories INTEGER NOT NULL,
+                protein INTEGER NOT NULL,
+                fat INTEGER NOT NULL,
+                carbohydrates INTEGER NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+            """
+        )
         await connection.commit()
