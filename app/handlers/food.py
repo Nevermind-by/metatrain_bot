@@ -6,7 +6,6 @@ from aiogram.types import CallbackQuery, Message
 from app.bot.states import FoodStates
 from app.keyboards.food import meal_keyboard
 from app.keyboards.product import product_keyboard
-from app.keyboards.recipe_add import recipe_add_keyboard
 from app.repositories.recipe import RecipeRepository
 from app.services.food import FoodService, MEALS
 from app.services.profile import ProfileService
@@ -30,8 +29,7 @@ async def _user_id(telegram_id: int) -> int | None:
 async def food_start(message: Message, state: FSMContext) -> None:
     if message.from_user is None:
         return
-    user_id = await _user_id(message.from_user.id)
-    if user_id is None:
+    if await _user_id(message.from_user.id) is None:
         await message.answer("Сначала создай профиль через /start.")
         return
     await state.clear()
@@ -72,24 +70,23 @@ async def food_meal(callback: CallbackQuery, state: FSMContext) -> None:
 
 @router.callback_query(F.data.startswith("food:recipe:"))
 async def saved_recipe(callback: CallbackQuery, state: FSMContext) -> None:
-    recipe_id_text = callback.data.rsplit(":", 1)[-1]
-    if not recipe_id_text.isdigit():
+    value = callback.data.rsplit(":", 1)[-1]
+    if not value.isdigit():
         await callback.answer("Некорректное блюдо", show_alert=True)
         return
     user_id = await _user_id(callback.from_user.id)
-    recipe = await recipe_repository.get(user_id, int(recipe_id_text)) if user_id is not None else None
+    recipe = await recipe_repository.get(user_id, int(value)) if user_id is not None else None
     if recipe is None:
         await callback.answer("Блюдо не найдено", show_alert=True)
         return
     await state.update_data(
-        product_name=recipe.name,
-        calories=recipe.calories / recipe.servings,
-        protein=recipe.protein / recipe.servings,
-        fat=recipe.fat / recipe.servings,
-        carbohydrates=recipe.carbohydrates / recipe.servings,
-        recipe=True,
+        recipe_name=recipe.name,
+        calories_per_serving=recipe.calories / recipe.servings,
+        protein_per_serving=recipe.protein / recipe.servings,
+        fat_per_serving=recipe.fat / recipe.servings,
+        carbohydrates_per_serving=recipe.carbohydrates / recipe.servings,
     )
-    await state.set_state(FoodStates.grams)
+    await state.set_state(FoodStates.recipe)
     if callback.message is not None:
         await callback.message.edit_text(f"{recipe.name}\nСколько порций? Например: 1.5")
     await callback.answer()
@@ -97,16 +94,22 @@ async def saved_recipe(callback: CallbackQuery, state: FSMContext) -> None:
 
 @router.callback_query(F.data.startswith("food:product:"))
 async def saved_product(callback: CallbackQuery, state: FSMContext) -> None:
-    product_id_text = callback.data.rsplit(":", 1)[-1]
-    if not product_id_text.isdigit():
+    value = callback.data.rsplit(":", 1)[-1]
+    if not value.isdigit():
         await callback.answer("Некорректный продукт", show_alert=True)
         return
     user_id = await _user_id(callback.from_user.id)
-    product = await product_service.get(user_id, int(product_id_text)) if user_id is not None else None
+    product = await product_service.get(user_id, int(value)) if user_id is not None else None
     if product is None:
         await callback.answer("Продукт не найден", show_alert=True)
         return
-    await state.update_data(product_name=product.name, calories=product.calories, protein=product.protein, fat=product.fat, carbohydrates=product.carbohydrates, recipe=False)
+    await state.update_data(
+        product_name=product.name,
+        calories=product.calories,
+        protein=product.protein,
+        fat=product.fat,
+        carbohydrates=product.carbohydrates,
+    )
     await state.set_state(FoodStates.grams)
     if callback.message is not None:
         await callback.message.edit_text(f"{product.name}\nСколько граммов? Например: 150")
@@ -127,7 +130,7 @@ async def food_name(message: Message, state: FSMContext) -> None:
     if not name:
         await message.answer("Введи название продукта.")
         return
-    await state.update_data(product_name=name, recipe=False)
+    await state.update_data(product_name=name)
     await state.set_state(FoodStates.grams)
     await message.answer("Сколько граммов? Например: 150")
 
@@ -136,35 +139,67 @@ async def food_name(message: Message, state: FSMContext) -> None:
 async def food_grams(message: Message, state: FSMContext) -> None:
     data = await state.get_data()
     try:
-        value = float((message.text or "").replace(",", "."))
+        grams = float((message.text or "").replace(",", "."))
     except ValueError:
         await message.answer("Введи число, например: 150")
         return
-    if value <= 0:
+    if grams <= 0:
         await message.answer("Значение должно быть больше нуля.")
         return
-
-    if data.get("recipe"):
-        await _save_food(message, state, value, is_recipe=True)
+    if all(k in data for k in ("calories", "protein", "fat", "carbohydrates")):
+        user_id = await _user_id(message.from_user.id) if message.from_user else None
+        if user_id is None:
+            await state.clear(); await message.answer("Пользователь не найден. Используй /start."); return
+        entry = await food_service.add_product_entry(
+            user_id=user_id, meal=data["meal"], product_name=data["product_name"], grams=grams,
+            calories_per_100=data["calories"], protein_per_100=data["protein"],
+            fat_per_100=data["fat"], carbohydrates_per_100=data["carbohydrates"],
+        )
+        await state.clear()
+        await message.answer(
+            f"Добавлено ✅\n{entry.product_name} — {entry.quantity:g} г\n"
+            f"{entry.calories:g} ккал • Б {entry.protein:g} г • Ж {entry.fat:g} г • У {entry.carbohydrates:g}\n\n/today"
+        )
         return
-
-    if all(key in data for key in ("calories", "protein", "fat", "carbohydrates")):
-        await _save_food(message, state, value)
-        return
-
-    await state.update_data(grams=value)
+    await state.update_data(grams=grams)
     await state.set_state(FoodStates.calories)
     await message.answer("Калорийность на 100 г?")
 
 
-async def _numeric(message: Message, state: FSMContext, next_state: object, key: str, prompt: str, minimum: float = 0) -> None:
+@router.message(FoodStates.recipe)
+async def recipe_servings(message: Message, state: FSMContext) -> None:
+    data = await state.get_data()
+    try:
+        servings = float((message.text or "").replace(",", "."))
+    except ValueError:
+        await message.answer("Введи число, например: 1.5")
+        return
+    if servings <= 0:
+        await message.answer("Количество порций должно быть больше нуля.")
+        return
+    user_id = await _user_id(message.from_user.id) if message.from_user else None
+    if user_id is None:
+        await state.clear(); await message.answer("Пользователь не найден. Используй /start."); return
+    entry = await food_service.add_recipe_entry(
+        user_id=user_id, meal=data["meal"], recipe_name=data["recipe_name"], servings=servings,
+        calories_per_serving=data["calories_per_serving"], protein_per_serving=data["protein_per_serving"],
+        fat_per_serving=data["fat_per_serving"], carbohydrates_per_serving=data["carbohydrates_per_serving"],
+    )
+    await state.clear()
+    await message.answer(
+        f"Добавлено ✅\n🍲 {entry.product_name} — {entry.quantity:g} порц.\n"
+        f"{entry.calories:g} ккал • Б {entry.protein:g} г • Ж {entry.fat:g} г • У {entry.carbohydrates:g}\n\n/today"
+    )
+
+
+async def _numeric(message: Message, state: FSMContext, next_state: object, key: str, prompt: str) -> None:
     try:
         value = float((message.text or "").replace(",", "."))
     except ValueError:
         await message.answer("Введи число, например: 12.5")
         return
-    if value < minimum:
-        await message.answer(f"Значение не может быть меньше {minimum}.")
+    if value < 0:
+        await message.answer("Значение не может быть отрицательным.")
         return
     await state.update_data(**{key: value})
     await state.set_state(next_state)
@@ -188,71 +223,47 @@ async def food_fat(message: Message, state: FSMContext) -> None:
 
 @router.message(FoodStates.carbohydrates)
 async def food_carbohydrates(message: Message, state: FSMContext) -> None:
-    await _numeric(message, state, FoodStates.grams, "carbohydrates", "Готово, введи вес ещё раз для сохранения:")
-
-
-async def _save_food(message: Message, state: FSMContext, amount: float, is_recipe: bool = False) -> None:
-    if message.from_user is None:
+    try:
+        value = float((message.text or "").replace(",", "."))
+    except ValueError:
+        await message.answer("Введи число, например: 20")
         return
-    user_id = await _user_id(message.from_user.id)
-    if user_id is None:
-        await state.clear()
-        await message.answer("Пользователь не найден. Используй /start.")
+    if value < 0:
+        await message.answer("Значение не может быть отрицательным.")
         return
     data = await state.get_data()
-    grams = amount if not is_recipe else amount
-    entry = await food_service.add_entry(
-        user_id=user_id,
-        meal=data["meal"],
-        product_name=data["product_name"],
-        grams=grams if not is_recipe else amount,
-        calories_per_100=data["calories"] if not is_recipe else data["calories"] * 100,
-        protein_per_100=data["protein"] if not is_recipe else data["protein"] * 100,
-        fat_per_100=data["fat"] if not is_recipe else data["fat"] * 100,
-        carbohydrates_per_100=data["carbohydrates"] if not is_recipe else data["carbohydrates"] * 100,
-    )
-    await state.clear()
-    await message.answer(
-        f"Добавлено ✅\n\n{entry.product_name} — {amount:g} {'порц.' if is_recipe else 'г'}\n"
-        f"{entry.calories:g} ккал • Б {entry.protein:g} г • Ж {entry.fat:g} г • У {entry.carbohydrates:g}\n\n"
-        "Смотреть дневник: /today"
-    )
+    await state.update_data(carbohydrates=value)
+    await state.set_state(FoodStates.grams)
+    await message.answer(f"{data.get('product_name', 'Продукт')}: теперь введи вес в граммах.")
 
 
 @router.message(Command("today"))
 async def today_handler(message: Message) -> None:
-    if message.from_user is None:
-        return
+    if message.from_user is None: return
     user_id = await _user_id(message.from_user.id)
     if user_id is None:
-        await message.answer("Сначала создай профиль через /start.")
-        return
+        await message.answer("Сначала создай профиль через /start."); return
     entries = await food_service.today(user_id)
     totals = food_service.totals(entries)
     profile = await profile_service.get_profile(user_id)
     if not entries:
-        await message.answer("Сегодня пока ничего не записано. Используй /food.")
-        return
+        await message.answer("Сегодня пока ничего не записано. Используй /food."); return
     lines = ["📅 <b>Сегодня</b>", ""]
     for entry in entries:
-        lines.append(f"#{entry.id} {MEALS[entry.meal]}: {entry.product_name} — {entry.grams:g} г ({entry.calories:g} ккал)")
+        lines.append(f"#{entry.id} {MEALS[entry.meal]}: {entry.product_name} — {entry.quantity:g} {entry.unit} ({entry.calories:g} ккал)")
     lines += ["", f"🔥 {totals['calories']:g} ккал", f"🥩 Б {totals['protein']:g} г", f"🥑 Ж {totals['fat']:g} г", f"🍚 У {totals['carbohydrates']:g} г"]
     if profile:
-        lines += ["", f"🎯 Цель: {profile.calories} ккал", f"Осталось: {max(0, profile.calories - totals['calories']):g} ккал", "Удалить запись: /delete_food <id>"]
+        lines += ["", f"🎯 Цель: {profile.calories} ккал", f"Осталось: {max(0, profile.calories - totals['calories']):g} ккал", "Удалить: /delete_food <id>"]
     await message.answer("\n".join(lines), parse_mode="HTML")
 
 
 @router.message(Command("delete_food"))
 async def delete_food(message: Message) -> None:
-    if message.from_user is None:
-        return
+    if message.from_user is None: return
     user_id = await _user_id(message.from_user.id)
     if user_id is None:
-        await message.answer("Сначала создай профиль через /start.")
-        return
+        await message.answer("Сначала создай профиль через /start."); return
     parts = (message.text or "").split(maxsplit=1)
     if len(parts) != 2 or not parts[1].isdigit():
-        await message.answer("Используй: /delete_food <id>\nID можно посмотреть через /today.")
-        return
-    deleted = await food_service.delete(user_id, int(parts[1]))
-    await message.answer("Запись удалена ✅" if deleted else "Запись не найдена.")
+        await message.answer("Используй: /delete_food <id>"); return
+    await message.answer("Запись удалена ✅" if await food_service.delete(user_id, int(parts[1])) else "Запись не найдена.")
