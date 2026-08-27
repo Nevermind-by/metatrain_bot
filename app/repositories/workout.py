@@ -26,6 +26,21 @@ class WorkoutRepository:
             await connection.commit()
         return workout_set
 
+    async def delete_set_for_user(self, set_id: int, user_id: int) -> bool:
+        async with await get_connection() as connection:
+            cursor = await connection.execute("DELETE FROM workout_sets WHERE id=? AND exercise_id IN (SELECT e.id FROM workout_exercises e JOIN workout_entries w ON w.id=e.workout_id WHERE w.user_id=?)", (set_id, user_id))
+            await connection.commit()
+        return cursor.rowcount > 0
+
+    async def complete(self, workout_id: int, user_id: int, duration_minutes: int | None, calories_burned: float | None) -> WorkoutEntry | None:
+        async with await get_connection() as connection:
+            cursor = await connection.execute("UPDATE workout_entries SET duration_minutes=?, calories_burned=? WHERE id=? AND user_id=?", (duration_minutes, calories_burned, workout_id, user_id))
+            await connection.commit()
+            if cursor.rowcount == 0: return None
+            cursor = await connection.execute("SELECT * FROM workout_entries WHERE id=? AND user_id=?", (workout_id, user_id))
+            row = await cursor.fetchone()
+        return self._workout(row) if row else None
+
     async def recent(self, user_id: int, limit: int = 10) -> list[WorkoutEntry]:
         async with await get_connection() as connection:
             cursor = await connection.execute("SELECT * FROM workout_entries WHERE user_id=? ORDER BY performed_at DESC LIMIT ?", (user_id, limit))
