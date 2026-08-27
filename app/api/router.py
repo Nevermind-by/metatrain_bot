@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, Header, HTTPException
 
 from app.api.auth import validate_telegram_init_data
-from app.api.schemas import DashboardResponse, FoodCreate, FoodTodayResponse, MacroProgress, WeightCreate, WeightsResponse
+from app.api.schemas import DashboardResponse, FoodCreate, FoodItemResponse, FoodTodayResponse, FoodTotalsResponse, MacroProgress, UserResponse, WeightCreate, WeightItemResponse, WeightsResponse
 from app.services.dashboard import DashboardService
 from app.services.food import FoodService
 from app.services.user import UserService
@@ -37,7 +37,7 @@ async def get_user(telegram_id: int):
     return user
 
 
-@router.get("/me")
+@router.get("/me", response_model=UserResponse)
 async def me(telegram_id: int = Depends(current_telegram_id)):
     user = await get_user(telegram_id)
     return UserResponse.model_validate(user, from_attributes=True)
@@ -66,10 +66,7 @@ async def dashboard(telegram_id: int = Depends(current_telegram_id)):
 async def food_today(telegram_id: int = Depends(current_telegram_id)):
     user = await get_user(telegram_id)
     entries = await food_service.today(user.id)
-    return FoodTodayResponse(
-        items=[FoodItemResponse.model_validate(entry, from_attributes=True) for entry in entries],
-        totals=FoodTotalsResponse(**food_service.totals(entries)),
-    )
+    return FoodTodayResponse(items=[FoodItemResponse.model_validate(entry, from_attributes=True) for entry in entries], totals=FoodTotalsResponse(**food_service.totals(entries)))
 
 
 @router.post("/food", response_model=FoodItemResponse)
