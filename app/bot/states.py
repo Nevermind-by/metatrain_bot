@@ -24,3 +24,14 @@ class FoodStates(StatesGroup):
     protein = State()
     fat = State()
     carbohydrates = State()
+
+
+class WeightStates(StatesGroup):
+    value = State()
+
+
+class WorkoutStates(StatesGroup):
+    name = State()
+    duration = State()
+    calories = State()
+    notes = State()
