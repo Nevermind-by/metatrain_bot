@@ -5,19 +5,17 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, Header, HTTPException
 
 from app.api.auth import validate_telegram_init_data
-from app.api.schemas import DashboardResponse, FoodCreate, MacroProgress, WeightCreate
+from app.api.schemas import DashboardResponse, FoodCreate, FoodTodayResponse, MacroProgress, WeightCreate, WeightsResponse
 from app.services.dashboard import DashboardService
 from app.services.food import FoodService
 from app.services.user import UserService
 from app.services.weight import WeightService
-from app.services.workout import WorkoutService
 
 router = APIRouter(prefix="/api")
 user_service = UserService()
 dashboard_service = DashboardService()
 food_service = FoodService()
 weight_service = WeightService()
-workout_service = WorkoutService()
 
 
 def current_telegram_id(x_telegram_init_data: str = Header(...)) -> int:
@@ -42,7 +40,7 @@ async def get_user(telegram_id: int):
 @router.get("/me")
 async def me(telegram_id: int = Depends(current_telegram_id)):
     user = await get_user(telegram_id)
-    return {"id": user.id, "telegram_id": user.telegram_id, "username": user.username, "first_name": user.first_name}
+    return UserResponse.model_validate(user, from_attributes=True)
 
 
 @router.get("/dashboard", response_model=DashboardResponse)
@@ -64,29 +62,32 @@ async def dashboard(telegram_id: int = Depends(current_telegram_id)):
     )
 
 
-@router.get("/food/today")
+@router.get("/food/today", response_model=FoodTodayResponse)
 async def food_today(telegram_id: int = Depends(current_telegram_id)):
     user = await get_user(telegram_id)
     entries = await food_service.today(user.id)
-    return {"items": [entry.__dict__ for entry in entries], "totals": food_service.totals(entries)}
+    return FoodTodayResponse(
+        items=[FoodItemResponse.model_validate(entry, from_attributes=True) for entry in entries],
+        totals=FoodTotalsResponse(**food_service.totals(entries)),
+    )
 
 
-@router.post("/food")
+@router.post("/food", response_model=FoodItemResponse)
 async def add_food(payload: FoodCreate, telegram_id: int = Depends(current_telegram_id)):
     user = await get_user(telegram_id)
     entry = await food_service.add_product_entry(user_id=user.id, **payload.model_dump())
-    return entry.__dict__
+    return FoodItemResponse.model_validate(entry, from_attributes=True)
 
 
-@router.get("/weights")
+@router.get("/weights", response_model=WeightsResponse)
 async def weights(telegram_id: int = Depends(current_telegram_id)):
     user = await get_user(telegram_id)
     entries = await weight_service.recent(user.id)
-    return {"items": [entry.__dict__ for entry in entries]}
+    return WeightsResponse(items=[WeightItemResponse.model_validate(entry, from_attributes=True) for entry in entries])
 
 
-@router.post("/weights")
+@router.post("/weights", response_model=WeightItemResponse)
 async def add_weight(payload: WeightCreate, telegram_id: int = Depends(current_telegram_id)):
     user = await get_user(telegram_id)
     entry = await weight_service.add(user.id, payload.weight_kg)
-    return entry.__dict__
+    return WeightItemResponse.model_validate(entry, from_attributes=True)
