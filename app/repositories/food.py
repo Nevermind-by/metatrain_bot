@@ -8,17 +8,11 @@ class FoodRepository:
     async def create(self, entry: FoodEntry) -> FoodEntry:
         async with await get_connection() as connection:
             cursor = await connection.execute(
-                """
-                INSERT INTO food_entries (
-                    user_id, meal, product_name, grams,
-                    calories, protein, fat, carbohydrates, eaten_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    entry.user_id, entry.meal, entry.product_name, entry.grams,
-                    entry.calories, entry.protein, entry.fat,
-                    entry.carbohydrates, entry.eaten_at.isoformat(),
-                ),
+                """INSERT INTO food_entries
+                (user_id, meal, product_name, quantity, unit, calories, protein, fat, carbohydrates, eaten_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (entry.user_id, entry.meal, entry.product_name, entry.quantity, entry.unit,
+                 entry.calories, entry.protein, entry.fat, entry.carbohydrates, entry.eaten_at.isoformat()),
             )
             await connection.commit()
             entry.id = cursor.lastrowid
@@ -45,10 +39,7 @@ class FoodRepository:
 
     async def delete(self, user_id: int, entry_id: int) -> bool:
         async with await get_connection() as connection:
-            cursor = await connection.execute(
-                "DELETE FROM food_entries WHERE id = ? AND user_id = ?",
-                (entry_id, user_id),
-            )
+            cursor = await connection.execute("DELETE FROM food_entries WHERE id = ? AND user_id = ?", (entry_id, user_id))
             await connection.commit()
         return cursor.rowcount > 0
 
@@ -58,9 +49,7 @@ class FoodRepository:
         if eaten_at.tzinfo is None:
             eaten_at = eaten_at.replace(tzinfo=timezone.utc)
         return FoodEntry(
-            id=row["id"], user_id=row["user_id"], meal=row["meal"],
-            product_name=row["product_name"], grams=row["grams"],
-            calories=row["calories"], protein=row["protein"],
-            fat=row["fat"], carbohydrates=row["carbohydrates"],
-            eaten_at=eaten_at,
+            id=row["id"], user_id=row["user_id"], meal=row["meal"], product_name=row["product_name"],
+            quantity=row["quantity"], unit=row["unit"], calories=row["calories"], protein=row["protein"],
+            fat=row["fat"], carbohydrates=row["carbohydrates"], eaten_at=eaten_at,
         )
