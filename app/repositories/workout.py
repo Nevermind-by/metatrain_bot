@@ -32,6 +32,18 @@ class WorkoutRepository:
             rows = await cursor.fetchall()
         return [self._workout(row) for row in rows]
 
+    async def get_workout_for_user(self, workout_id: int, user_id: int) -> WorkoutEntry | None:
+        async with await get_connection() as connection:
+            cursor = await connection.execute("SELECT * FROM workout_entries WHERE id=? AND user_id=?", (workout_id, user_id))
+            row = await cursor.fetchone()
+        return self._workout(row) if row else None
+
+    async def get_exercise_for_user(self, exercise_id: int, user_id: int) -> WorkoutExercise | None:
+        async with await get_connection() as connection:
+            cursor = await connection.execute("SELECT e.* FROM workout_exercises e JOIN workout_entries w ON w.id=e.workout_id WHERE e.id=? AND w.user_id=?", (exercise_id, user_id))
+            row = await cursor.fetchone()
+        return WorkoutExercise(row["id"], row["workout_id"], row["name"], row["position"]) if row else None
+
     async def exercise_history(self, user_id: int, exercise_name: str, limit: int = 10) -> list[WorkoutSet]:
         async with await get_connection() as connection:
             cursor = await connection.execute("SELECT s.* FROM workout_sets s JOIN workout_exercises e ON e.id=s.exercise_id JOIN workout_entries w ON w.id=e.workout_id WHERE w.user_id=? AND lower(e.name)=lower(?) ORDER BY w.performed_at DESC, s.set_number LIMIT ?", (user_id, exercise_name.strip(), limit))
