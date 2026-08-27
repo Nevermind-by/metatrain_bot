@@ -10,13 +10,14 @@ from app.handlers.history import router as history_router
 from app.handlers.products import router as products_router
 from app.handlers.profile import router as profile_router
 from app.handlers.progress import router as progress_router
+from app.handlers.recipe import router as recipe_router
 from app.handlers.start import router as start_router
 
 
 async def main() -> None:
     bot = Bot(token=settings.bot_token)
     dispatcher = Dispatcher()
-    for router in (start_router, profile_router, food_router, products_router, progress_router, dashboard_router, history_router):
+    for router in (start_router, profile_router, food_router, products_router, recipe_router, progress_router, dashboard_router, history_router):
         dispatcher.include_router(router)
 
     await init_database()
