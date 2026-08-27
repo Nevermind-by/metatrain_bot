@@ -13,8 +13,11 @@ def validate_telegram_init_data(init_data: str, bot_token: str, max_age: int = 8
     auth_date = pairs.get("auth_date")
     if not auth_date or not auth_date.isdigit():
         raise ValueError("Missing Telegram auth_date")
-    if time.time() - int(auth_date) > max_age:
+    age = time.time() - int(auth_date)
+    if age > max_age:
         raise ValueError("Expired Telegram initData")
+    if age < -300:
+        raise ValueError("Telegram auth_date is in the future")
 
     data_check_string = "\n".join(f"{key}={pairs[key]}" for key in sorted(pairs))
     secret_key = hmac.new(b"WebAppData", bot_token.encode(), hashlib.sha256).digest()
