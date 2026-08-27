@@ -26,6 +26,19 @@ class WorkoutRepository:
             await connection.commit()
         return workout_set
 
+    async def sets_for_exercise(self, exercise_id: int) -> list[WorkoutSet]:
+        async with await get_connection() as connection:
+            cursor = await connection.execute("SELECT * FROM workout_sets WHERE exercise_id=? ORDER BY set_number", (exercise_id,))
+            rows = await cursor.fetchall()
+        return [WorkoutSet(row["id"], row["exercise_id"], row["set_number"], row["weight_kg"], row["reps"], row["rpe"]) for row in rows]
+
+    async def exercises_with_sets_for_workout(self, workout_id: int) -> list[tuple[WorkoutExercise, list[WorkoutSet]]]:
+        exercises = await self.exercises_for_workout(workout_id)
+        result = []
+        for exercise in exercises:
+            result.append((exercise, await self.sets_for_exercise(exercise.id)))
+        return result
+
     async def delete_set_for_user(self, set_id: int, user_id: int) -> bool:
         async with await get_connection() as connection:
             cursor = await connection.execute("DELETE FROM workout_sets WHERE id=? AND exercise_id IN (SELECT e.id FROM workout_exercises e JOIN workout_entries w ON w.id=e.workout_id WHERE w.user_id=?)", (set_id, user_id))
@@ -58,6 +71,12 @@ class WorkoutRepository:
             cursor = await connection.execute("SELECT e.* FROM workout_exercises e JOIN workout_entries w ON w.id=e.workout_id WHERE e.id=? AND w.user_id=?", (exercise_id, user_id))
             row = await cursor.fetchone()
         return WorkoutExercise(row["id"], row["workout_id"], row["name"], row["position"]) if row else None
+
+    async def exercises_for_workout(self, workout_id: int) -> list[WorkoutExercise]:
+        async with await get_connection() as connection:
+            cursor = await connection.execute("SELECT * FROM workout_exercises WHERE workout_id=? ORDER BY position", (workout_id,))
+            rows = await cursor.fetchall()
+        return [WorkoutExercise(row["id"], row["workout_id"], row["name"], row["position"]) for row in rows]
 
     async def exercise_history(self, user_id: int, exercise_name: str, limit: int = 10) -> list[WorkoutSet]:
         async with await get_connection() as connection:
