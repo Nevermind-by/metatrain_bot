@@ -42,7 +42,7 @@ class WeightServiceTests(unittest.IsolatedAsyncioTestCase):
         ]
         result = await self.service.analytics(1, limit=90)
         self.assertEqual(result["current"], 79.0)
-        self.assertEqual(result["change_7d"], None)
+        self.assertEqual(result["change_7d"], -1.0)
         self.assertEqual(result["change_30d"], 1.0)
         self.assertEqual(result["min"], 78.0)
         self.assertEqual(result["max"], 80.0)
