@@ -5,13 +5,16 @@ from aiogram.types import CallbackQuery, Message
 
 from app.bot.states import FoodStates
 from app.keyboards.food import meal_keyboard
+from app.keyboards.product import product_keyboard
 from app.services.food import FoodService, MEALS
 from app.services.profile import ProfileService
+from app.services.product import ProductService
 from app.services.user import UserService
 
 router = Router(name="food")
 food_service = FoodService()
 profile_service = ProfileService()
+product_service = ProductService()
 user_service = UserService()
 
 
@@ -45,9 +48,47 @@ async def food_meal(callback: CallbackQuery, state: FSMContext) -> None:
         await callback.answer("Некорректный приём пищи", show_alert=True)
         return
     await state.update_data(meal=meal)
+    products = await product_service.recent(callback.from_user.id)
+    if products:
+        await state.set_state(FoodStates.product_name)
+        if callback.message is not None:
+            await callback.message.edit_text("Выбери сохранённый продукт или добавь новый:", reply_markup=product_keyboard(products))
+    else:
+        await state.set_state(FoodStates.product_name)
+        if callback.message is not None:
+            await callback.message.edit_text("Название продукта:\n\n/cancel — отменить")
+    await callback.answer()
+
+
+@router.callback_query(F.data == "food:product:new")
+async def new_product_for_food(callback: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(FoodStates.product_name)
     if callback.message is not None:
         await callback.message.edit_text("Название продукта:\n\n/cancel — отменить")
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("food:product:"))
+async def saved_product(callback: CallbackQuery, state: FSMContext) -> None:
+    product_id_text = callback.data.rsplit(":", 1)[-1]
+    if not product_id_text.isdigit():
+        await callback.answer("Некорректный продукт", show_alert=True)
+        return
+    product = await product_service.get(callback.from_user.id, int(product_id_text))
+    if product is None:
+        await callback.answer("Продукт не найден", show_alert=True)
+        return
+    data = await state.get_data()
+    await state.update_data(
+        product_name=product.name,
+        calories=product.calories,
+        protein=product.protein,
+        fat=product.fat,
+        carbohydrates=product.carbohydrates,
+    )
+    await state.set_state(FoodStates.grams)
+    if callback.message is not None:
+        await callback.message.edit_text(f"{product.name}\nСколько граммов? Например: 150")
     await callback.answer()
 
 
@@ -78,6 +119,10 @@ async def _numeric(message: Message, state: FSMContext, next_state: object, key:
 
 @router.message(FoodStates.grams)
 async def food_grams(message: Message, state: FSMContext) -> None:
+    data = await state.get_data()
+    if all(key in data for key in ("calories", "protein", "fat", "carbohydrates")):
+        await _save_food(message, state, float((message.text or "").replace(",", ".")) if (message.text or "").strip() else -1)
+        return
     await _numeric(message, state, FoodStates.calories, "grams", "Калорийность на 100 г?", 0.1)
 
 
@@ -106,23 +151,25 @@ async def food_carbohydrates(message: Message, state: FSMContext) -> None:
     if carbohydrates < 0:
         await message.answer("Углеводы не могут быть отрицательными.")
         return
-
+    await state.update_data(carbohydrates=carbohydrates)
     data = await state.get_data()
+    await _save_food(message, state, data["grams"])
+
+
+async def _save_food(message: Message, state: FSMContext, grams: float) -> None:
+    if grams <= 0:
+        await message.answer("Вес должен быть больше нуля.")
+        return
     user_id = await _user_id(message.from_user.id)
     if user_id is None:
         await state.clear()
         await message.answer("Пользователь не найден. Используй /start.")
         return
-
+    data = await state.get_data()
     entry = await food_service.add_entry(
-        user_id=user_id,
-        meal=data["meal"],
-        product_name=data["product_name"],
-        grams=data["grams"],
-        calories_per_100=data["calories"],
-        protein_per_100=data["protein"],
-        fat_per_100=data["fat"],
-        carbohydrates_per_100=carbohydrates,
+        user_id=user_id, meal=data["meal"], product_name=data["product_name"], grams=grams,
+        calories_per_100=data["calories"], protein_per_100=data["protein"],
+        fat_per_100=data["fat"], carbohydrates_per_100=data["carbohydrates"],
     )
     await state.clear()
     await message.answer(
@@ -140,31 +187,18 @@ async def today_handler(message: Message) -> None:
     if user_id is None:
         await message.answer("Сначала создай профиль через /start.")
         return
-
     entries = await food_service.today(user_id)
     totals = food_service.totals(entries)
     profile = await profile_service.get_profile(user_id)
     if not entries:
         await message.answer("Сегодня пока ничего не записано. Используй /food.")
         return
-
     lines = ["📅 <b>Сегодня</b>", ""]
     for entry in entries:
         lines.append(f"#{entry.id} {MEALS[entry.meal]}: {entry.product_name} — {entry.grams:g} г ({entry.calories:g} ккал)")
-    lines.extend([
-        "",
-        f"🔥 {totals['calories']:g} ккал",
-        f"🥩 Б {totals['protein']:g} г",
-        f"🥑 Ж {totals['fat']:g} г",
-        f"🍚 У {totals['carbohydrates']:g} г",
-    ])
+    lines.extend(["", f"🔥 {totals['calories']:g} ккал", f"🥩 Б {totals['protein']:g} г", f"🥑 Ж {totals['fat']:g} г", f"🍚 У {totals['carbohydrates']:g} г"])
     if profile is not None:
-        lines.extend([
-            "",
-            f"🎯 Цель: {profile.calories} ккал",
-            f"Осталось: {max(0, profile.calories - totals['calories']):g} ккал",
-            "Удалить запись: /delete_food <id>",
-        ])
+        lines.extend(["", f"🎯 Цель: {profile.calories} ккал", f"Осталось: {max(0, profile.calories - totals['calories']):g} ккал", "Удалить запись: /delete_food <id>"])
     await message.answer("\n".join(lines), parse_mode="HTML")
 
 
