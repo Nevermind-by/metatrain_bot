@@ -37,14 +37,15 @@ class WorkoutService:
     async def get_exercise_for_user(self, exercise_id: int, user_id: int) -> WorkoutExercise | None:
         return await self.repository.get_exercise_for_user(exercise_id, user_id)
 
-    async def exercise_history(self, user_id: int, exercise_name: str, limit: int = 10) -> list[WorkoutSet]:
+    async def exercise_history(self, user_id: int, exercise_name: str, limit: int = 100) -> list[WorkoutSet]:
         return await self.repository.exercise_history(user_id, exercise_name, limit)
 
     async def progress(self, user_id: int, exercise_name: str, limit: int = 20) -> dict:
-        sets = await self.repository.exercise_history(user_id, exercise_name, limit)
-        if not sets: return {"exercise": exercise_name, "sets": [], "best_weight": 0, "best_volume": 0, "estimated_1rm": 0}
+        sessions = await self.repository.exercise_workout_history(user_id, exercise_name, limit)
+        sets = await self.repository.exercise_history(user_id, exercise_name, 100)
+        if not sets:
+            return {"exercise": exercise_name, "sets": [], "sessions": [], "best_weight": 0, "best_volume": 0, "estimated_1rm": 0}
         best_weight = max(item.weight_kg for item in sets)
         best_volume = max(item.weight_kg * item.reps for item in sets)
-        weighted_sets = [item.weight_kg * (1 + item.reps / 30) for item in sets if item.weight_kg > 0]
-        estimated_1rm = max(weighted_sets, default=0)
-        return {"exercise": exercise_name, "sets": sets, "best_weight": round(best_weight, 1), "best_volume": round(best_volume, 1), "estimated_1rm": round(estimated_1rm, 1)}
+        estimated_1rm = max((item.weight_kg * (1 + item.reps / 30) for item in sets if item.weight_kg > 0), default=0)
+        return {"exercise": exercise_name, "sets": sets, "sessions": sessions, "best_weight": round(best_weight, 1), "best_volume": round(best_volume, 1), "estimated_1rm": round(estimated_1rm, 1)}
