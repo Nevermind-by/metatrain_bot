@@ -83,6 +83,12 @@ async def weights(telegram_id: int = Depends(current_telegram_id)):
     return WeightsResponse(items=[WeightItemResponse.model_validate(entry, from_attributes=True) for entry in entries])
 
 
+@router.get("/weights/analytics")
+async def weight_analytics(telegram_id: int = Depends(current_telegram_id)):
+    user = await get_user(telegram_id)
+    return await weight_service.analytics(user.id)
+
+
 @router.post("/weights", response_model=WeightItemResponse)
 async def add_weight(payload: WeightCreate, telegram_id: int = Depends(current_telegram_id)):
     user = await get_user(telegram_id)
