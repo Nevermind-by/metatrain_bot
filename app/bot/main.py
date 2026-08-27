@@ -15,7 +15,6 @@ from app.handlers.recipe import router as recipe_router
 from app.handlers.start import router as start_router
 from app.handlers.workout import router as workout_router
 
-
 logger = logging.getLogger(__name__)
 
 

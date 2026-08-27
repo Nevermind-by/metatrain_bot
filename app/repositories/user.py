@@ -26,7 +26,7 @@ class UserRepository:
         last_name: str | None,
     ) -> User:
         async with await get_connection() as connection:
-            cursor = await connection.execute(
+            await connection.execute(
                 """
                 INSERT INTO users (telegram_id, username, first_name, last_name)
                 VALUES (?, ?, ?, ?)
@@ -34,7 +34,6 @@ class UserRepository:
                 (telegram_id, username, first_name, last_name),
             )
             await connection.commit()
-            user_id = cursor.lastrowid
 
         user = await self.get_by_telegram_id(telegram_id)
         if user is None:

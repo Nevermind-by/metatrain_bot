@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from app.models.weight import WeightEntry
 from app.repositories.weight import WeightRepository
@@ -12,7 +12,7 @@ class WeightService:
         if not 30 <= weight_kg <= 300:
             raise ValueError("Weight must be between 30 and 300 kg")
         return await self.repository.create(
-            WeightEntry(None, user_id, weight_kg, datetime.now(timezone.utc))
+            WeightEntry(None, user_id, weight_kg, datetime.now(UTC))
         )
 
     async def latest(self, user_id: int) -> WeightEntry | None:
@@ -27,7 +27,7 @@ class WeightService:
             return {"current": None, "change_7d": None, "change_30d": None, "min": None, "max": None, "trend": None, "entries": []}
 
         entries = sorted(entries, key=lambda item: item.measured_at, reverse=True)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         current = entries[0].weight_kg
 
         def weight_before(days: int) -> float | None:

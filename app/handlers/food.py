@@ -7,9 +7,9 @@ from app.bot.states import FoodStates
 from app.keyboards.food import meal_keyboard
 from app.keyboards.product import product_keyboard
 from app.repositories.recipe import RecipeRepository
-from app.services.food import FoodService, MEALS
-from app.services.profile import ProfileService
+from app.services.food import MEALS, FoodService
 from app.services.product import ProductService
+from app.services.profile import ProfileService
 from app.services.user import UserService
 
 router = Router(name="food")

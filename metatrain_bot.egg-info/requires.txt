@@ -1,0 +1,4 @@
+aiogram>=3.29.1
+aiosqlite>=0.22.0
+fastapi>=0.116.0
+pydantic-settings>=2.14.2

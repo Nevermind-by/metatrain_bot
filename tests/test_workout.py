@@ -1,6 +1,5 @@
 import unittest
 
-from app.models.workout import WorkoutEntry
 from app.services.workout import WorkoutService
 
 

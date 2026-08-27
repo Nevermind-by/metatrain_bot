@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.models.workout import WorkoutEntry, WorkoutExercise, WorkoutSet
 from app.repositories.workout import WorkoutRepository
@@ -10,7 +10,7 @@ class WorkoutService:
 
     async def start(self, *, user_id: int, name: str, notes: str | None = None) -> WorkoutEntry:
         if not name.strip(): raise ValueError("Workout name is required")
-        return await self.repository.create(WorkoutEntry(None, user_id, name.strip(), None, None, notes.strip() if notes else None, datetime.now(timezone.utc)))
+        return await self.repository.create(WorkoutEntry(None, user_id, name.strip(), None, None, notes.strip() if notes else None, datetime.now(UTC)))
 
     async def add_exercise(self, *, workout_id: int, name: str, position: int) -> WorkoutExercise:
         if not name.strip() or position < 1: raise ValueError("Invalid exercise")

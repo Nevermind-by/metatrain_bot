@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.database.connection import get_connection
 from app.models.workout import WorkoutEntry, WorkoutExercise, WorkoutSet
@@ -21,7 +21,7 @@ class WorkoutRepository:
 
     async def add_set(self, workout_set: WorkoutSet) -> WorkoutSet:
         async with await get_connection() as connection:
-            cursor = await connection.execute("INSERT INTO workout_sets (exercise_id,set_number,weight_kg,reps,rpe) VALUES (?,?,?,?,?)", (workout_set.exercise_id, workout_set.set_number, workout_set.weight_kg, workout_set.reps, workout_set.rpe))
+            await connection.execute("INSERT INTO workout_sets (exercise_id,set_number,weight_kg,reps,rpe) VALUES (?,?,?,?,?)", (workout_set.exercise_id, workout_set.set_number, workout_set.weight_kg, workout_set.reps, workout_set.rpe))
             await connection.commit()
         return workout_set
 
@@ -98,5 +98,5 @@ class WorkoutRepository:
     @staticmethod
     def _workout(row) -> WorkoutEntry:
         performed_at = datetime.fromisoformat(row["performed_at"])
-        if performed_at.tzinfo is None: performed_at = performed_at.replace(tzinfo=timezone.utc)
+        if performed_at.tzinfo is None: performed_at = performed_at.replace(tzinfo=UTC)
         return WorkoutEntry(row["id"], row["user_id"], row["name"], row["duration_minutes"], row["calories_burned"], row["notes"], performed_at)

@@ -1,11 +1,22 @@
 import json
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 
 from app.api.auth import validate_telegram_init_data
-from app.api.schemas import DashboardResponse, FoodCreate, FoodItemResponse, FoodTodayResponse, FoodTotalsResponse, MacroProgress, UserResponse, WeightCreate, WeightItemResponse, WeightsResponse
+from app.api.schemas import (
+    DashboardResponse,
+    FoodCreate,
+    FoodItemResponse,
+    FoodTodayResponse,
+    FoodTotalsResponse,
+    MacroProgress,
+    UserResponse,
+    WeightCreate,
+    WeightItemResponse,
+    WeightsResponse,
+)
 from app.services.dashboard import DashboardService
 from app.services.food import FoodService
 from app.services.user import UserService
@@ -51,7 +62,7 @@ async def dashboard(telegram_id: int = Depends(current_telegram_id)):
     totals = dashboard_service.food.totals(foods)
     latest_weight = await dashboard_service.weight.latest(user.id)
     workouts = await dashboard_service.workout.recent(user.id, 50)
-    since = datetime.now(timezone.utc) - timedelta(days=7)
+    since = datetime.now(UTC) - timedelta(days=7)
     return DashboardResponse(
         calories=MacroProgress(current=totals["calories"], target=profile.calories if profile else None),
         protein=MacroProgress(current=totals["protein"], target=profile.protein if profile else None),

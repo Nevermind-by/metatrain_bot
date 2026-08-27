@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.database.connection import get_connection
 from app.models.weight import WeightEntry
@@ -37,5 +37,5 @@ class WeightRepository:
     def _to_model(row) -> WeightEntry:
         measured_at = datetime.fromisoformat(row["measured_at"])
         if measured_at.tzinfo is None:
-            measured_at = measured_at.replace(tzinfo=timezone.utc)
+            measured_at = measured_at.replace(tzinfo=UTC)
         return WeightEntry(row["id"], row["user_id"], row["weight_kg"], measured_at)

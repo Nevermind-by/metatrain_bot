@@ -9,7 +9,6 @@ from app.keyboards.profile_view import profile_keyboard
 from app.services.profile import ProfileService
 from app.services.user import UserService
 
-
 router = Router(name="start")
 user_service = UserService()
 profile_service = ProfileService()

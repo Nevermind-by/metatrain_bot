@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from app.services.food import FoodService
 from app.services.profile import ProfileService
@@ -19,7 +19,7 @@ class DashboardService:
         totals = self.food.totals(foods)
         latest_weight = await self.weight.latest(user_id)
         workouts = await self.workout.recent(user_id, 50)
-        since = datetime.now(timezone.utc) - timedelta(days=7)
+        since = datetime.now(UTC) - timedelta(days=7)
         weekly_workouts = [item for item in workouts if item.performed_at >= since]
 
         lines = ["📊 <b>Сегодня</b>", ""]

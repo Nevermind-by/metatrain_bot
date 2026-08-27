@@ -3,7 +3,12 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
-from app.bot.states import FoodStates, ProgressStates, RecipeStates, WeightStates, WorkoutStates
+from app.bot.states import (
+    FoodStates,
+    ProgressStates,
+    WeightStates,
+    WorkoutStates,
+)
 from app.keyboards.dashboard import dashboard_keyboard
 from app.services.dashboard import DashboardService
 from app.services.user import UserService

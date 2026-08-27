@@ -1,8 +1,7 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.models.food import FoodEntry
 from app.repositories.food import FoodRepository
-
 
 MEALS = {"breakfast": "Завтрак", "lunch": "Обед", "dinner": "Ужин", "snack": "Перекус"}
 
@@ -21,7 +20,7 @@ class FoodService:
             id=None, user_id=user_id, meal=meal, product_name=product_name.strip(), quantity=grams, unit="g",
             calories=round(calories_per_100 * ratio, 1), protein=round(protein_per_100 * ratio, 1),
             fat=round(fat_per_100 * ratio, 1), carbohydrates=round(carbohydrates_per_100 * ratio, 1),
-            eaten_at=datetime.now(timezone.utc)))
+            eaten_at=datetime.now(UTC)))
 
     async def add_recipe_entry(self, *, user_id: int, meal: str, recipe_name: str, servings: float,
                                calories_per_serving: float, protein_per_serving: float,
@@ -32,10 +31,10 @@ class FoodService:
             id=None, user_id=user_id, meal=meal, product_name=recipe_name.strip(), quantity=servings, unit="portion",
             calories=round(calories_per_serving * servings, 1), protein=round(protein_per_serving * servings, 1),
             fat=round(fat_per_serving * servings, 1), carbohydrates=round(carbohydrates_per_serving * servings, 1),
-            eaten_at=datetime.now(timezone.utc)))
+            eaten_at=datetime.now(UTC)))
 
     async def today(self, user_id: int) -> list[FoodEntry]:
-        return await self.repository.list_for_day(user_id, datetime.now(timezone.utc).date().isoformat())
+        return await self.repository.list_for_day(user_id, datetime.now(UTC).date().isoformat())
 
     async def history(self, user_id: int, days: int = 7) -> list[FoodEntry]:
         return await self.repository.list_since(user_id, days)

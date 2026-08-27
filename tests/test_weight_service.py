@@ -1,5 +1,5 @@
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock
 
 from app.models.weight import WeightEntry
@@ -13,13 +13,12 @@ class WeightServiceTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_add_rejects_weight_outside_supported_range(self):
         for weight in (29.9, 300.1):
-            with self.subTest(weight=weight):
-                with self.assertRaises(ValueError):
-                    await self.service.add(1, weight)
+            with self.subTest(weight=weight), self.assertRaises(ValueError):
+                await self.service.add(1, weight)
         self.repository.create.assert_not_awaited()
 
     async def test_add_creates_entry_for_valid_weight(self):
-        expected = WeightEntry(7, 1, 82.5, datetime.now(timezone.utc))
+        expected = WeightEntry(7, 1, 82.5, datetime.now(UTC))
         self.repository.create.return_value = expected
         result = await self.service.add(1, 82.5)
         self.assertIs(result, expected)
@@ -34,7 +33,7 @@ class WeightServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(result["trend"])
 
     async def test_analytics_calculates_changes_and_extremes(self):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         self.repository.recent.return_value = [
             WeightEntry(3, 1, 78.0, now - timedelta(days=31)),
             WeightEntry(2, 1, 80.0, now - timedelta(days=8)),

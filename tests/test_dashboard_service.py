@@ -1,5 +1,5 @@
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock
 
 from app.models.food import FoodEntry
@@ -24,7 +24,7 @@ class DashboardServiceTests(unittest.IsolatedAsyncioTestCase):
         }
 
     async def test_build_aggregates_today_and_week(self):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         self.service.profile.get_profile.return_value = UserProfile(1, "male", 30, 180, 80, "moderate", "maintain", 2500, 160, 80, 300)
         self.service.food.today.return_value = [
             FoodEntry(1, 1, "lunch", "Rice", 100, "g", 350, 7, 1, 75, now),
