@@ -5,6 +5,9 @@ on:
     branches: [main, feature/food-final4]
   pull_request:
 
+env:
+  BOT_TOKEN: "123456789:CI_TEST_TOKEN"
+
 jobs:
   test:
     runs-on: ubuntu-latest
