@@ -1,20 +1,23 @@
 import json
 import os
+from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Header, HTTPException, Depends
+from fastapi import APIRouter, Depends, Header, HTTPException
 
 from app.api.auth import validate_telegram_init_data
-from app.api.schemas import DashboardResponse, FoodCreate, WeightCreate
+from app.api.schemas import DashboardResponse, FoodCreate, MacroProgress, WeightCreate
 from app.services.dashboard import DashboardService
 from app.services.food import FoodService
 from app.services.user import UserService
 from app.services.weight import WeightService
+from app.services.workout import WorkoutService
 
 router = APIRouter(prefix="/api")
 user_service = UserService()
 dashboard_service = DashboardService()
 food_service = FoodService()
 weight_service = WeightService()
+workout_service = WorkoutService()
 
 
 def current_telegram_id(x_telegram_init_data: str = Header(...)) -> int:
@@ -45,7 +48,20 @@ async def me(telegram_id: int = Depends(current_telegram_id)):
 @router.get("/dashboard", response_model=DashboardResponse)
 async def dashboard(telegram_id: int = Depends(current_telegram_id)):
     user = await get_user(telegram_id)
-    return DashboardResponse(text=await dashboard_service.build(user.id))
+    profile = await dashboard_service.profile.get_profile(user.id)
+    foods = await dashboard_service.food.today(user.id)
+    totals = dashboard_service.food.totals(foods)
+    latest_weight = await dashboard_service.weight.latest(user.id)
+    workouts = await dashboard_service.workout.recent(user.id, 50)
+    since = datetime.now(timezone.utc) - timedelta(days=7)
+    return DashboardResponse(
+        calories=MacroProgress(current=totals["calories"], target=profile.calories if profile else None),
+        protein=MacroProgress(current=totals["protein"], target=profile.protein if profile else None),
+        fat=MacroProgress(current=totals["fat"], target=profile.fat if profile else None),
+        carbohydrates=MacroProgress(current=totals["carbohydrates"], target=profile.carbohydrates if profile else None),
+        weight_kg=latest_weight.weight_kg if latest_weight else None,
+        workouts_last_7_days=sum(item.performed_at >= since for item in workouts),
+    )
 
 
 @router.get("/food/today")
