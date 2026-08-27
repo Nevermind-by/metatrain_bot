@@ -4,6 +4,7 @@ from aiogram import Bot, Dispatcher
 
 from app.config.settings import settings
 from app.database.connection import init_database
+from app.handlers.dashboard import router as dashboard_router
 from app.handlers.food import router as food_router
 from app.handlers.profile import router as profile_router
 from app.handlers.progress import router as progress_router
@@ -17,6 +18,7 @@ async def main() -> None:
     dispatcher.include_router(profile_router)
     dispatcher.include_router(food_router)
     dispatcher.include_router(progress_router)
+    dispatcher.include_router(dashboard_router)
 
     await init_database()
     print("MetaTrain initialization completed.")
