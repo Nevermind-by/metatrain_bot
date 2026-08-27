@@ -1,10 +1,15 @@
+from pathlib import Path
+
 import aiosqlite
 
 from app.config.settings import settings
 
 
 async def get_connection() -> aiosqlite.Connection:
-    connection = await aiosqlite.connect(settings.database_path)
+    database_path = Path(settings.database_path)
+    database_path.parent.mkdir(parents=True, exist_ok=True)
+
+    connection = await aiosqlite.connect(database_path)
     connection.row_factory = aiosqlite.Row
     return connection
 
