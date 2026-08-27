@@ -22,11 +22,12 @@ class WeightService:
         return await self.repository.recent(user_id, limit)
 
     async def analytics(self, user_id: int, limit: int = 90) -> dict:
-        entries = list(reversed(await self.repository.recent(user_id, limit)))
+        entries = await self.repository.recent(user_id, limit)
         if not entries:
             return {"current": None, "change_7d": None, "change_30d": None, "min": None, "max": None, "trend": None, "entries": []}
+
         now = datetime.now(timezone.utc)
-        current = entries[-1].weight_kg
+        current = entries[0].weight_kg
 
         def weight_before(days: int) -> float | None:
             cutoff = now - timedelta(days=days)
@@ -36,8 +37,8 @@ class WeightService:
         week = weight_before(7)
         month = weight_before(30)
         values = [item.weight_kg for item in entries]
-        first = values[0]
-        trend = "up" if current > first else "down" if current < first else "stable"
+        oldest = values[-1]
+        trend = "up" if current > oldest else "down" if current < oldest else "stable"
         return {
             "current": current,
             "change_7d": round(current - week, 2) if week is not None else None,
