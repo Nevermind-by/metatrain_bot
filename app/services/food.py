@@ -53,6 +53,9 @@ class FoodService:
         day = datetime.now(timezone.utc).date().isoformat()
         return await self.repository.list_for_day(user_id, day)
 
+    async def history(self, user_id: int, days: int = 7) -> list[FoodEntry]:
+        return await self.repository.list_since(user_id, days)
+
     async def delete(self, user_id: int, entry_id: int) -> bool:
         return await self.repository.delete(user_id, entry_id)
 
@@ -64,3 +67,9 @@ class FoodService:
             "fat": round(sum(e.fat for e in entries), 1),
             "carbohydrates": round(sum(e.carbohydrates for e in entries), 1),
         }
+
+    @staticmethod
+    def average_daily_calories(entries: list[FoodEntry], days: int) -> float:
+        if days <= 0:
+            raise ValueError("Days must be positive")
+        return round(sum(e.calories for e in entries) / days, 1)
