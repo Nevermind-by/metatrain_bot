@@ -8,7 +8,8 @@ class FoodEntry:
     user_id: int
     meal: str
     product_name: str
-    grams: float
+    quantity: float
+    unit: str
     calories: float
     protein: float
     fat: float
