@@ -145,12 +145,12 @@ async def today_handler(message: Message) -> None:
     totals = food_service.totals(entries)
     profile = await profile_service.get_profile(user_id)
     if not entries:
-        await message.answer("Сегодня пока ничего не записано.")
+        await message.answer("Сегодня пока ничего не записано. Используй /food.")
         return
 
     lines = ["📅 <b>Сегодня</b>", ""]
     for entry in entries:
-        lines.append(f"{MEALS[entry.meal]}: {entry.product_name} — {entry.grams:g} г ({entry.calories:g} ккал)")
+        lines.append(f"#{entry.id} {MEALS[entry.meal]}: {entry.product_name} — {entry.grams:g} г ({entry.calories:g} ккал)")
     lines.extend([
         "",
         f"🔥 {totals['calories']:g} ккал",
@@ -163,5 +163,22 @@ async def today_handler(message: Message) -> None:
             "",
             f"🎯 Цель: {profile.calories} ккал",
             f"Осталось: {max(0, profile.calories - totals['calories']):g} ккал",
+            "Удалить запись: /delete_food <id>",
         ])
     await message.answer("\n".join(lines), parse_mode="HTML")
+
+
+@router.message(Command("delete_food"))
+async def delete_food(message: Message) -> None:
+    if message.from_user is None:
+        return
+    user_id = await _user_id(message.from_user.id)
+    if user_id is None:
+        await message.answer("Сначала создай профиль через /start.")
+        return
+    parts = (message.text or "").split(maxsplit=1)
+    if len(parts) != 2 or not parts[1].isdigit():
+        await message.answer("Используй: /delete_food <id>\nID можно посмотреть через /today.")
+        return
+    deleted = await food_service.delete(user_id, int(parts[1]))
+    await message.answer("Запись удалена ✅" if deleted else "Запись не найдена.")
