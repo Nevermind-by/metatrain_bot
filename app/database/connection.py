@@ -11,6 +11,7 @@ async def get_connection() -> aiosqlite.Connection:
 
     connection = await aiosqlite.connect(database_path)
     connection.row_factory = aiosqlite.Row
+    await connection.execute("PRAGMA foreign_keys = ON")
     return connection
 
 
@@ -37,6 +38,7 @@ async def init_database() -> None:
                 age INTEGER NOT NULL,
                 height_cm REAL NOT NULL,
                 weight_kg REAL NOT NULL,
+                activity_level TEXT NOT NULL DEFAULT 'sedentary',
                 goal TEXT NOT NULL,
                 calories INTEGER NOT NULL,
                 protein INTEGER NOT NULL,
@@ -48,4 +50,10 @@ async def init_database() -> None:
             )
             """
         )
+        columns = await connection.execute_fetchall("PRAGMA table_info(user_profiles)")
+        column_names = {row[1] for row in columns}
+        if "activity_level" not in column_names:
+            await connection.execute(
+                "ALTER TABLE user_profiles ADD COLUMN activity_level TEXT NOT NULL DEFAULT 'sedentary'"
+            )
         await connection.commit()
