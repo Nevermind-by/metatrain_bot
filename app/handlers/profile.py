@@ -2,7 +2,7 @@ from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message
 
-from app.keyboards.profile import profile_keyboard
+from app.keyboards.profile_view import profile_keyboard
 from app.services.profile import ProfileService
 
 router = Router(name="profile")
@@ -19,10 +19,7 @@ async def profile_handler(message: Message) -> None:
         await message.answer("Профиль ещё не заполнен. Используй /start.")
         return
 
-    await message.answer(
-        profile_service.format_profile(profile),
-        reply_markup=profile_keyboard(),
-    )
+    await message.answer(profile_service.format_profile(profile), reply_markup=profile_keyboard())
 
 
 @router.callback_query(F.data == "profile:show")
@@ -33,8 +30,5 @@ async def profile_callback(callback: CallbackQuery) -> None:
         return
 
     if callback.message is not None:
-        await callback.message.edit_text(
-            profile_service.format_profile(profile),
-            reply_markup=profile_keyboard(),
-        )
+        await callback.message.edit_text(profile_service.format_profile(profile), reply_markup=profile_keyboard())
     await callback.answer()
