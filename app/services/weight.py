@@ -26,13 +26,14 @@ class WeightService:
         if not entries:
             return {"current": None, "change_7d": None, "change_30d": None, "min": None, "max": None, "trend": None, "entries": []}
 
+        entries = sorted(entries, key=lambda item: item.measured_at, reverse=True)
         now = datetime.now(timezone.utc)
         current = entries[0].weight_kg
 
         def weight_before(days: int) -> float | None:
             cutoff = now - timedelta(days=days)
             candidates = [item for item in entries if item.measured_at <= cutoff]
-            return candidates[-1].weight_kg if candidates else None
+            return candidates[0].weight_kg if candidates else None
 
         week = weight_before(7)
         month = weight_before(30)
