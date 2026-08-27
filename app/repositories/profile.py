@@ -10,14 +10,15 @@ class ProfileRepository:
             await connection.execute(
                 """
                 INSERT INTO user_profiles (
-                    user_id, gender, age, height_cm, weight_kg, goal,
-                    calories, protein, fat, carbohydrates
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    user_id, gender, age, height_cm, weight_kg, activity_level,
+                    goal, calories, protein, fat, carbohydrates
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(user_id) DO UPDATE SET
                     gender = excluded.gender,
                     age = excluded.age,
                     height_cm = excluded.height_cm,
                     weight_kg = excluded.weight_kg,
+                    activity_level = excluded.activity_level,
                     goal = excluded.goal,
                     calories = excluded.calories,
                     protein = excluded.protein,
@@ -31,6 +32,7 @@ class ProfileRepository:
                     profile.age,
                     profile.height_cm,
                     profile.weight_kg,
+                    profile.activity_level,
                     profile.goal,
                     profile.calories,
                     profile.protein,
@@ -62,6 +64,7 @@ class ProfileRepository:
             age=row["age"],
             height_cm=row["height_cm"],
             weight_kg=row["weight_kg"],
+            activity_level=row["activity_level"],
             goal=row["goal"],
             calories=row["calories"],
             protein=row["protein"],
