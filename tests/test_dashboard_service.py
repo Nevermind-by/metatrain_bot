@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 from app.models.food import FoodEntry
 from app.models.profile import UserProfile
 from app.models.weight import WeightEntry
-from app.models.workout import Workout
+from app.models.workout import WorkoutEntry
 from app.services.dashboard import DashboardService
 
 
@@ -31,8 +31,8 @@ class DashboardServiceTests(unittest.IsolatedAsyncioTestCase):
         ]
         self.service.weight.latest.return_value = WeightEntry(1, 1, 80, now)
         self.service.workout.recent.return_value = [
-            Workout(1, 1, "Today", None, now),
-            Workout(2, 1, "Old", None, now - timedelta(days=8)),
+            WorkoutEntry(1, 1, "Today", None, None, None, now),
+            WorkoutEntry(2, 1, "Old", None, None, None, now - timedelta(days=8)),
         ]
 
         result = await self.service.build(1)
