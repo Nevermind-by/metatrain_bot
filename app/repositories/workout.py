@@ -22,7 +22,6 @@ class WorkoutRepository:
     async def add_set(self, workout_set: WorkoutSet) -> WorkoutSet:
         async with await get_connection() as connection:
             cursor = await connection.execute("INSERT INTO workout_sets (exercise_id,set_number,weight_kg,reps,rpe) VALUES (?,?,?,?,?)", (workout_set.exercise_id, workout_set.set_number, workout_set.weight_kg, workout_set.reps, workout_set.rpe))
-            workout_set.id = cursor.lastrowid
             await connection.commit()
         return workout_set
 
@@ -78,11 +77,17 @@ class WorkoutRepository:
             rows = await cursor.fetchall()
         return [WorkoutExercise(row["id"], row["workout_id"], row["name"], row["position"]) for row in rows]
 
-    async def exercise_history(self, user_id: int, exercise_name: str, limit: int = 10) -> list[WorkoutSet]:
+    async def exercise_history(self, user_id: int, exercise_name: str, limit: int = 100) -> list[WorkoutSet]:
         async with await get_connection() as connection:
             cursor = await connection.execute("SELECT s.* FROM workout_sets s JOIN workout_exercises e ON e.id=s.exercise_id JOIN workout_entries w ON w.id=e.workout_id WHERE w.user_id=? AND lower(e.name)=lower(?) ORDER BY w.performed_at DESC, s.set_number LIMIT ?", (user_id, exercise_name.strip(), limit))
             rows = await cursor.fetchall()
         return [WorkoutSet(row["id"], row["exercise_id"], row["set_number"], row["weight_kg"], row["reps"], row["rpe"]) for row in rows]
+
+    async def exercise_workout_history(self, user_id: int, exercise_name: str, limit: int = 30) -> list[dict]:
+        async with await get_connection() as connection:
+            cursor = await connection.execute("SELECT w.id AS workout_id, w.performed_at, MAX(s.weight_kg) AS max_weight, SUM(s.weight_kg * s.reps) AS volume, MAX(s.weight_kg * (1 + s.reps / 30.0)) AS estimated_1rm, COUNT(s.id) AS sets_count FROM workout_entries w JOIN workout_exercises e ON e.workout_id=w.id JOIN workout_sets s ON s.exercise_id=e.id WHERE w.user_id=? AND lower(e.name)=lower(?) GROUP BY w.id, w.performed_at ORDER BY w.performed_at DESC LIMIT ?", (user_id, exercise_name.strip(), limit))
+            rows = await cursor.fetchall()
+        return [{"workout_id": row["workout_id"], "performed_at": row["performed_at"], "max_weight": round(row["max_weight"] or 0, 1), "volume": round(row["volume"] or 0, 1), "estimated_1rm": round(row["estimated_1rm"] or 0, 1), "sets_count": row["sets_count"]} for row in rows]
 
     @staticmethod
     def _workout(row) -> WorkoutEntry:
