@@ -1,9 +1,9 @@
-from aiogram import F, Router
+from aiogram import Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
-from app.bot.states import WeightStates, WorkoutStates
+from app.bot.states import ProgressStates, WeightStates, WorkoutStates
 from app.services.user import UserService
 from app.services.weight import WeightService
 from app.services.workout import WorkoutService
@@ -56,15 +56,14 @@ async def progress_start(message: Message, state: FSMContext) -> None:
     if message.from_user is None: return
     if await _user_id(message.from_user.id) is None:
         await message.answer("Сначала создай профиль через /start."); return
-    await state.clear(); await state.set_state(WorkoutStates.exercise)
+    await state.clear(); await state.set_state(ProgressStates.exercise)
     await message.answer("Какое упражнение показать?\nНапример: Жим лёжа\n\n/cancel — отменить")
 
 
-@router.message(WorkoutStates.exercise)
+@router.message(ProgressStates.exercise)
 async def progress_exercise(message: Message, state: FSMContext) -> None:
     exercise = (message.text or "").strip()
-    if not exercise or exercise.startswith("/"):
-        return
+    if not exercise or exercise.startswith("/"): return
     user_id = await _user_id(message.from_user.id) if message.from_user else None
     if user_id is None:
         await state.clear(); await message.answer("Пользователь не найден."); return
@@ -100,9 +99,8 @@ async def workout_name(message: Message, state: FSMContext) -> None:
     await message.answer(f"🏋️ {workout.name}\n\nПервое упражнение? Например: Жим лёжа")
 
 
-@router.message(WorkoutStates.exercise, F.text)
+@router.message(WorkoutStates.exercise)
 async def workout_exercise(message: Message, state: FSMContext) -> None:
-    # Progress and workout share this state; /progress is handled before entering workout mode.
     name = (message.text or "").strip()
     if not name or name.startswith("/"): return
     data = await state.get_data()
@@ -132,23 +130,18 @@ async def workout_reps(message: Message, state: FSMContext) -> None:
 
 @router.message(WorkoutStates.rpe)
 async def workout_rpe(message: Message, state: FSMContext) -> None:
-    try: rpe = float((message.text or "").replace(",", "."))
+    text = (message.text or "").strip()
+    if text == "/next":
+        await state.set_state(WorkoutStates.exercise); await message.answer("Следующее упражнение?"); return
+    if text == "/finish":
+        await state.clear(); await message.answer("Тренировка завершена ✅\n\nИстория: /workouts"); return
+    try: rpe = float(text.replace(",", "."))
     except ValueError: await message.answer("Введи RPE от 1 до 10 или 0."); return
     if rpe != 0 and not 1 <= rpe <= 10: await message.answer("RPE должен быть от 1 до 10, либо 0."); return
     data = await state.get_data()
     await workout_service.add_set(exercise_id=int(data["exercise_id"]), set_number=int(data["set_number"]), weight_kg=float(data["weight"]), reps=int(data["reps"]), rpe=None if rpe == 0 else rpe)
     next_set = int(data["set_number"]) + 1; await state.update_data(set_number=next_set)
     await message.answer(f"Подход {next_set}: вес в кг?\n\n/next — следующее упражнение\n/finish — закончить")
-
-
-@router.message(WorkoutStates.rpe, Command("next"))
-async def next_exercise(message: Message, state: FSMContext) -> None:
-    await state.set_state(WorkoutStates.exercise); await message.answer("Следующее упражнение?")
-
-
-@router.message(WorkoutStates.rpe, Command("finish"))
-async def finish_workout(message: Message, state: FSMContext) -> None:
-    await state.clear(); await message.answer("Тренировка завершена ✅\n\nИстория: /workouts")
 
 
 @router.message(Command("workouts"))
