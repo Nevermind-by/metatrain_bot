@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from app.database.connection import get_connection
 from app.models.food import FoodEntry
@@ -29,6 +29,16 @@ class FoodRepository:
             cursor = await connection.execute(
                 "SELECT * FROM food_entries WHERE user_id = ? AND date(eaten_at) = ? ORDER BY eaten_at",
                 (user_id, day),
+            )
+            rows = await cursor.fetchall()
+        return [self._to_model(row) for row in rows]
+
+    async def list_since(self, user_id: int, days: int) -> list[FoodEntry]:
+        since = datetime.now(timezone.utc) - timedelta(days=days)
+        async with await get_connection() as connection:
+            cursor = await connection.execute(
+                "SELECT * FROM food_entries WHERE user_id = ? AND eaten_at >= ? ORDER BY eaten_at DESC",
+                (user_id, since.isoformat()),
             )
             rows = await cursor.fetchall()
         return [self._to_model(row) for row in rows]
