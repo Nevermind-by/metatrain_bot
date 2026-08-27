@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from aiogram import Bot, Dispatcher
 
@@ -15,14 +16,22 @@ from app.handlers.start import router as start_router
 from app.handlers.workout import router as workout_router
 
 
+logger = logging.getLogger(__name__)
+
+
 async def main() -> None:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
+
     bot = Bot(token=settings.bot_token)
     dispatcher = Dispatcher()
     for router in (start_router, profile_router, food_router, products_router, recipe_router, progress_router, dashboard_router, history_router, workout_router):
         dispatcher.include_router(router)
 
     await init_database()
-    print("MetaTrain initialization completed.")
+    logger.info("MetaTrain initialization completed.")
     await dispatcher.start_polling(bot)
 
 
