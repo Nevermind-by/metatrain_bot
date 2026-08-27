@@ -14,3 +14,13 @@ class ProfileStates(StatesGroup):
     edit_weight = State()
     edit_activity_level = State()
     edit_goal = State()
+
+
+class FoodStates(StatesGroup):
+    meal = State()
+    product_name = State()
+    grams = State()
+    calories = State()
+    protein = State()
+    fat = State()
+    carbohydrates = State()
