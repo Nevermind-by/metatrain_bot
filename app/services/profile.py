@@ -7,33 +7,27 @@ class ProfileService:
     def __init__(self, repository: ProfileRepository | None = None) -> None:
         self.repository = repository or ProfileRepository()
 
-    async def create_profile(
-        self,
-        *,
-        user_id: int,
-        gender: str,
-        age: int,
-        height_cm: float,
-        weight_kg: float,
-        goal: str,
-    ) -> UserProfile:
-        nutrition = calculate_nutrition(
-            gender=gender,
-            age=age,
-            height_cm=height_cm,
-            weight_kg=weight_kg,
-            goal=goal,
-        )
-        profile = UserProfile(
-            user_id=user_id,
-            gender=gender,
-            age=age,
-            height_cm=height_cm,
-            weight_kg=weight_kg,
-            goal=goal,
-            calories=nutrition.calories,
-            protein=nutrition.protein,
-            fat=nutrition.fat,
-            carbohydrates=nutrition.carbohydrates,
-        )
+    async def create_profile(self, *, user_id: int, gender: str, age: int, height_cm: float, weight_kg: float, goal: str) -> UserProfile:
+        nutrition = calculate_nutrition(gender=gender, age=age, height_cm=height_cm, weight_kg=weight_kg, goal=goal)
+        profile = UserProfile(user_id=user_id, gender=gender, age=age, height_cm=height_cm, weight_kg=weight_kg, goal=goal, calories=nutrition.calories, protein=nutrition.protein, fat=nutrition.fat, carbohydrates=nutrition.carbohydrates)
         return await self.repository.upsert(profile)
+
+    async def get_profile(self, user_id: int) -> UserProfile | None:
+        return await self.repository.get_by_user_id(user_id)
+
+    def format_profile(self, profile: UserProfile) -> str:
+        gender = {"male": "Мужчина", "female": "Женщина"}.get(profile.gender, profile.gender)
+        goal = {"lose": "Похудеть", "maintain": "Поддерживать вес", "gain": "Набрать массу"}.get(profile.goal, profile.goal)
+        return (
+            "👤 <b>Твой профиль</b>\n\n"
+            f"Пол: {gender}\n"
+            f"Возраст: {profile.age} лет\n"
+            f"Рост: {profile.height_cm:g} см\n"
+            f"Вес: {profile.weight_kg:g} кг\n"
+            f"Цель: {goal}\n\n"
+            "🎯 <b>Твоя дневная норма</b>\n\n"
+            f"🔥 Калории: <b>{profile.calories} ккал</b>\n"
+            f"🥩 Белки: <b>{profile.protein} г</b>\n"
+            f"🥑 Жиры: <b>{profile.fat} г</b>\n"
+            f"🍚 Углеводы: <b>{profile.carbohydrates} г</b>"
+        )
