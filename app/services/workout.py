@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from app.models.workout import WorkoutEntry
+from app.models.workout import WorkoutEntry, WorkoutExercise, WorkoutSet
 from app.repositories.workout import WorkoutRepository
 
 
@@ -8,28 +8,20 @@ class WorkoutService:
     def __init__(self, repository: WorkoutRepository | None = None) -> None:
         self.repository = repository or WorkoutRepository()
 
-    async def add(
-        self,
-        *,
-        user_id: int,
-        name: str,
-        duration_minutes: int | None = None,
-        calories_burned: int | None = None,
-        notes: str | None = None,
-    ) -> WorkoutEntry:
-        if not name.strip():
-            raise ValueError("Workout name is required")
-        if duration_minutes is not None and not 1 <= duration_minutes <= 1440:
-            raise ValueError("Invalid duration")
-        if calories_burned is not None and calories_burned < 0:
-            raise ValueError("Calories burned cannot be negative")
-        return await self.repository.create(
-            WorkoutEntry(
-                None, user_id, name.strip(), duration_minutes,
-                calories_burned, notes.strip() if notes else None,
-                datetime.now(timezone.utc),
-            )
-        )
+    async def start(self, *, user_id: int, name: str, notes: str | None = None) -> WorkoutEntry:
+        if not name.strip(): raise ValueError("Workout name is required")
+        return await self.repository.create(WorkoutEntry(None, user_id, name.strip(), None, None, notes.strip() if notes else None, datetime.now(timezone.utc)))
+
+    async def add_exercise(self, *, workout_id: int, name: str, position: int) -> WorkoutExercise:
+        if not name.strip() or position < 1: raise ValueError("Invalid exercise")
+        return await self.repository.add_exercise(WorkoutExercise(None, workout_id, name.strip(), position))
+
+    async def add_set(self, *, exercise_id: int, set_number: int, weight_kg: float, reps: int, rpe: float | None = None) -> WorkoutSet:
+        if set_number < 1 or weight_kg < 0 or reps < 1 or (rpe is not None and not 1 <= rpe <= 10): raise ValueError("Invalid set")
+        return await self.repository.add_set(WorkoutSet(None, exercise_id, set_number, weight_kg, reps, rpe))
 
     async def recent(self, user_id: int, limit: int = 10) -> list[WorkoutEntry]:
         return await self.repository.recent(user_id, limit)
+
+    async def exercise_history(self, user_id: int, exercise_name: str, limit: int = 10) -> list[WorkoutSet]:
+        return await self.repository.exercise_history(user_id, exercise_name, limit)
