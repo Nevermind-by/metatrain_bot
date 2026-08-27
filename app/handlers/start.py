@@ -5,6 +5,7 @@ from aiogram.types import CallbackQuery, Message
 
 from app.bot.states import ProfileStates
 from app.keyboards.profile import activity_keyboard, gender_keyboard, goal_keyboard
+from app.keyboards.profile_view import profile_keyboard
 from app.services.profile import ProfileService
 from app.services.user import UserService
 
@@ -20,9 +21,19 @@ async def start_handler(message: Message, state: FSMContext) -> None:
         return
 
     user, _ = await user_service.register(message.from_user)
+    if user.id is not None:
+        existing_profile = await profile_service.get_profile(user.id)
+        if existing_profile is not None:
+            await state.clear()
+            await message.answer(
+                "С возвращением! 👋\n\n" + profile_service.format_profile(existing_profile),
+                reply_markup=profile_keyboard(),
+                parse_mode="HTML",
+            )
+            return
+
     await state.clear()
     await state.update_data(user_id=user.id)
-
     await message.answer(
         f"Привет, {user.first_name or 'друг'}! 👋\n\n"
         "Давай настроим твой профиль.\n"
@@ -38,10 +49,10 @@ async def gender_handler(callback: CallbackQuery, state: FSMContext) -> None:
     if gender not in {"male", "female"}:
         await callback.answer("Некорректный выбор", show_alert=True)
         return
-
     await state.update_data(gender=gender)
     await state.set_state(ProfileStates.age)
-    await callback.message.edit_text("Сколько тебе лет? Введи возраст числом.")
+    if callback.message is not None:
+        await callback.message.edit_text("Сколько тебе лет? Введи возраст числом.")
     await callback.answer()
 
 
@@ -98,7 +109,8 @@ async def activity_handler(callback: CallbackQuery, state: FSMContext) -> None:
         return
     await state.update_data(activity_level=activity_level)
     await state.set_state(ProfileStates.goal)
-    await callback.message.edit_text("Какая у тебя цель?", reply_markup=goal_keyboard())
+    if callback.message is not None:
+        await callback.message.edit_text("Какая у тебя цель?", reply_markup=goal_keyboard())
     await callback.answer()
 
 
@@ -124,10 +136,11 @@ async def goal_handler(callback: CallbackQuery, state: FSMContext) -> None:
         activity_level=data["activity_level"],
         goal=goal,
     )
-
     await state.clear()
-    await callback.message.edit_text(
-        "Профиль готов! 🎉\n\n" + profile_service.format_profile(profile),
-        parse_mode="HTML",
-    )
+    if callback.message is not None:
+        await callback.message.edit_text(
+            "Профиль готов! 🎉\n\n" + profile_service.format_profile(profile),
+            parse_mode="HTML",
+            reply_markup=profile_keyboard(),
+        )
     await callback.answer()
