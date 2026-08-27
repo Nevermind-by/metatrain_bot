@@ -82,7 +82,7 @@ async def delete_set(set_id: int, telegram_id: int = Depends(current_telegram_id
 async def progress(exercise_name: str, telegram_id: int = Depends(current_telegram_id)):
     user = await get_user(telegram_id)
     result = await service.progress(user.id, exercise_name)
-    return {"exercise": result["exercise"], "best_weight": result["best_weight"], "best_volume": result["best_volume"], "estimated_1rm": result["estimated_1rm"], "sets": [item.__dict__ for item in result["sets"]]}
+    return {"exercise": result["exercise"], "best_weight": result["best_weight"], "best_volume": result["best_volume"], "estimated_1rm": result["estimated_1rm"], "sessions": result["sessions"], "sets": [item.__dict__ for item in result["sets"]]}
 
 
 @router.get("/{workout_id}")
