@@ -84,8 +84,8 @@ async def workout(workout_id: int, telegram_id: int = Depends(current_telegram_i
     item = await service.get_workout_for_user(workout_id, user.id)
     if item is None:
         raise HTTPException(status_code=404, detail="Workout not found")
-    exercises = await service.repository.exercises_for_workout(workout_id)
-    return {"workout": item.__dict__, "exercises": [exercise.__dict__ for exercise in exercises]}
+    exercises = await service.repository.exercises_with_sets_for_workout(workout_id)
+    return {"workout": item.__dict__, "exercises": [{"exercise": exercise.__dict__, "sets": [workout_set.__dict__ for workout_set in sets]} for exercise, sets in exercises]}
 
 
 @router.get("/progress/{exercise_name}")
