@@ -20,3 +20,6 @@ class UserService:
             last_name=telegram_user.last_name,
         )
         return user, True
+
+    async def get_by_telegram_id(self, telegram_id: int) -> User | None:
+        return await self.repository.get_by_telegram_id(telegram_id)
