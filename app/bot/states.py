@@ -7,3 +7,8 @@ class ProfileStates(StatesGroup):
     height = State()
     weight = State()
     goal = State()
+    edit_gender = State()
+    edit_age = State()
+    edit_height = State()
+    edit_weight = State()
+    edit_goal = State()
