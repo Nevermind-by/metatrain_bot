@@ -20,3 +20,11 @@ def goal_keyboard() -> InlineKeyboardMarkup:
             [InlineKeyboardButton(text="💪 Набрать массу", callback_data="profile:goal:gain")],
         ]
     )
+
+
+def profile_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="✏️ Изменить профиль", callback_data="profile:edit")]
+        ]
+    )
