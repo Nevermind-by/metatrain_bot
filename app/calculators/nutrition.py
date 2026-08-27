@@ -9,12 +9,22 @@ class NutritionResult:
     carbohydrates: int
 
 
+ACTIVITY_FACTORS = {
+    "sedentary": 1.2,
+    "light": 1.375,
+    "moderate": 1.55,
+    "high": 1.725,
+    "very_high": 1.9,
+}
+
+
 def calculate_nutrition(
     *,
     gender: str,
     age: int,
     height_cm: float,
     weight_kg: float,
+    activity_level: str,
     goal: str,
 ) -> NutritionResult:
     """Calculate daily calories and macros using Mifflin-St Jeor."""
@@ -25,9 +35,11 @@ def calculate_nutrition(
     else:
         raise ValueError(f"Unsupported gender: {gender}")
 
-    # MVP assumes a sedentary activity level. Activity factors can be
-    # introduced later without changing the onboarding flow.
-    calories = bmr * 1.2
+    try:
+        calories = bmr * ACTIVITY_FACTORS[activity_level]
+    except KeyError as error:
+        raise ValueError(f"Unsupported activity level: {activity_level}") from error
+
     if goal == "lose":
         calories *= 0.8
     elif goal == "gain":
