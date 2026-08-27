@@ -8,8 +8,18 @@ class UserResponse(BaseModel):
     first_name: str | None = None
 
 
+class MacroProgress(BaseModel):
+    current: float
+    target: float | None = None
+
+
 class DashboardResponse(BaseModel):
-    text: str
+    calories: MacroProgress
+    protein: MacroProgress
+    fat: MacroProgress
+    carbohydrates: MacroProgress
+    weight_kg: float | None = None
+    workouts_last_7_days: int
 
 
 class WeightCreate(BaseModel):
