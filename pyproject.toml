@@ -8,8 +8,6 @@ dependencies = [
     "aiogram>=3.29.1",
     "aiosqlite>=0.22.0",
     "pydantic-settings>=2.14.2",
-    "fastapi>=0.116.0",
-    "uvicorn[standard]>=0.35.0",
 ]
 
 [dependency-groups]
