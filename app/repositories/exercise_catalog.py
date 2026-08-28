@@ -17,13 +17,13 @@ EXERCISES = (
     ("one_arm_dumbbell_row", "Тяга гантели одной рукой", "One-arm dumbbell row", "back", "Спина", "Back", "Гантель", "Dumbbell", ("тяга гантели",), ("one arm row",)),
     ("deadlift", "Становая тяга", "Deadlift", "back", "Спина", "Back", "Штанга", "Barbell", ("становая",), ("deadlift",)),
     ("barbell_squat", "Приседания со штангой", "Barbell squat", "legs", "Ноги", "Legs", "Штанга", "Barbell", ("присед", "приседания со штангой"), ("squat",)),
-    ("front_squat", "Фронтальные приседания", "Front squat", "legs", "Ноги", "Legs", "Штанга", "Barbell", ("фронтальный присед",), ("front squat",)),
+    ("front_squat", "Фронтальные приседания", "Front squat", "legs", "Ноги", "Ноги", "Штанга", "Barbell", ("фронтальный присед",), ("front squat",)),
     ("leg_press", "Жим ногами", "Leg press", "legs", "Ноги", "Legs", "Тренажёр", "Machine", ("жим ногами",), ("leg press",)),
     ("romanian_deadlift", "Румынская тяга", "Romanian deadlift", "legs", "Ноги", "Legs", "Штанга", "Barbell", ("румынская тяга",), ("romanian deadlift", "rdl")),
     ("leg_curl", "Сгибание ног", "Leg curl", "legs", "Ноги", "Legs", "Тренажёр", "Machine", ("сгибание ног",), ("leg curl",)),
-    ("leg_extension", "Разгибание ног", "Leg extension", "legs", "Ноги", "Legs", "Тренажёр", "Machine", ("разгибание ног",), ("leg extension",)),
-    ("calf_raise", "Подъёмы на носки", "Calf raise", "legs", "Ноги", "Legs", "Тренажёр", "Machine", ("икры", "подъёмы на носки"), ("calf raises",)),
-    ("lunges", "Выпады", "Lunges", "legs", "Ноги", "Legs", "Гантели", "Dumbbells", ("выпады",), ("lunges",)),
+    ("leg_extension", "Разгибание ног", "Leg extension", "legs", "Ноги", "Ноги", "Тренажёр", "Machine", ("разгибание ног",), ("leg extension",)),
+    ("calf_raise", "Подъёмы на носки", "Calf raise", "legs", "Ноги", "Ноги", "Тренажёр", "Machine", ("икры", "подъёмы на носки"), ("calf raises",)),
+    ("lunges", "Выпады", "Lunges", "legs", "Ноги", "Ноги", "Гантели", "Dumbbells", ("выпады",), ("lunges",)),
     ("shoulder_press", "Жим гантелей сидя", "Seated dumbbell shoulder press", "shoulders", "Плечи", "Shoulders", "Гантели", "Dumbbells", ("жим гантелей на плечи",), ("dumbbell shoulder press",)),
     ("barbell_overhead_press", "Жим штанги стоя", "Barbell overhead press", "shoulders", "Плечи", "Shoulders", "Штанга", "Barbell", ("армейский жим", "жим стоя"), ("overhead press", "military press")),
     ("lateral_raise", "Подъёмы гантелей через стороны", "Dumbbell lateral raise", "shoulders", "Плечи", "Shoulders", "Гантели", "Dumbbells", ("махи в стороны", "разведения в стороны"), ("lateral raises",)),
@@ -58,8 +58,9 @@ class ExerciseCatalogRepository:
                 aliases_ru TEXT NOT NULL DEFAULT '',
                 aliases_en TEXT NOT NULL DEFAULT ''
             )""")
-            count = await connection.execute_fetchone("SELECT COUNT(*) FROM exercise_catalog")
-            if count[0] == 0:
+            cursor = await connection.execute("SELECT COUNT(*) FROM exercise_catalog")
+            row = await cursor.fetchone()
+            if row[0] == 0:
                 await connection.executemany(
                     "INSERT INTO exercise_catalog (code,name_ru,name_en,category,muscle_group_ru,muscle_group_en,equipment_ru,equipment_en,aliases_ru,aliases_en) VALUES (?,?,?,?,?,?,?,?,?,?)",
                     [(code, ru, en, category, mg_ru, mg_en, eq_ru, eq_en, "|".join(a_ru), "|".join(a_en)) for code, ru, en, category, mg_ru, mg_en, eq_ru, eq_en, a_ru, a_en in EXERCISES],
