@@ -22,12 +22,18 @@ class DashboardService:
         since = datetime.now(UTC) - timedelta(days=7)
         weekly_workouts = [item for item in workouts if item.performed_at >= since]
 
-        lines = ["📊 <b>Сегодня</b>", ""]
-        lines.append(f"🔥 Калории: {totals['calories']:g}" + (f" / {profile.calories}" if profile else ""))
-        lines.append(f"🥩 Белки: {totals['protein']:g} г" + (f" / {profile.protein} г" if profile else ""))
-        lines.append(f"🥑 Жиры: {totals['fat']:g} г" + (f" / {profile.fat} г" if profile else ""))
-        lines.append(f"🍚 Углеводы: {totals['carbohydrates']:g} г" + (f" / {profile.carbohydrates} г" if profile else ""))
-        lines.append("")
-        lines.append(f"⚖️ Вес: {latest_weight.weight_kg:g} кг" if latest_weight else "⚖️ Вес: нет измерений")
-        lines.append(f"🏋️ Тренировок за 7 дней: {len(weekly_workouts)}")
+        lines = [
+            "🏠 <b>Твой день</b>",
+            "",
+            "🔥 <b>Питание</b>",
+            f"Калории: <b>{totals['calories']:g}</b>" + (f" / {profile.calories} ккал" if profile else " ккал"),
+            f"🥩 Белки: {totals['protein']:g} г" + (f" / {profile.protein} г" if profile else ""),
+            f"🥑 Жиры: {totals['fat']:g} г" + (f" / {profile.fat} г" if profile else ""),
+            f"🍚 Углеводы: {totals['carbohydrates']:g} г" + (f" / {profile.carbohydrates} г" if profile else ""),
+            "",
+            f"⚖️ <b>Вес:</b> {latest_weight.weight_kg:g} кг" if latest_weight else "⚖️ <b>Вес:</b> пока нет измерений",
+            f"🏋️ <b>Тренировок за 7 дней:</b> {len(weekly_workouts)}",
+            "",
+            "Выбери, что хочешь сделать:",
+        ]
         return "\n".join(lines)
