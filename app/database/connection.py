@@ -5,13 +5,24 @@ import aiosqlite
 from app.config.settings import settings
 
 
-async def get_connection() -> aiosqlite.Connection:
+class _ConnectionContext:
+    def __init__(self, connection: aiosqlite.Connection) -> None:
+        self._connection = connection
+
+    async def __aenter__(self) -> aiosqlite.Connection:
+        return self._connection
+
+    async def __aexit__(self, exc_type, exc_value, traceback) -> None:
+        await self._connection.close()
+
+
+async def get_connection() -> _ConnectionContext:
     database_path = Path(settings.database_path)
     database_path.parent.mkdir(parents=True, exist_ok=True)
     connection = await aiosqlite.connect(database_path)
     connection.row_factory = aiosqlite.Row
     await connection.execute("PRAGMA foreign_keys = ON")
-    return connection
+    return _ConnectionContext(connection)
 
 
 async def init_database() -> None:
