@@ -4,7 +4,7 @@ from aiogram.types import Message
 
 from app.bot.states import FoodStates, ProgressStates, WeightStates, WorkoutStates
 from app.handlers.dashboard import _render
-from app.i18n import language_code, main_menu_texts if False else t
+from app.i18n import language_code
 from app.keyboards.food_flow import meal_keyboard
 from app.keyboards.main_menu import main_menu_texts
 from app.keyboards.navigation import navigation_keyboard
@@ -32,7 +32,8 @@ async def _user_id(message: Message) -> int | None:
 async def food_menu(message: Message, state: FSMContext) -> None:
     await state.clear(); await state.set_state(FoodStates.meal)
     lang = language_code(message.from_user)
-    await message.answer("🍽 <b>Добавить питание</b>\n\nВыбери приём пищи:" if lang == "ru" else "🍽 <b>Add nutrition</b>\n\nChoose a meal:", parse_mode="HTML", reply_markup=meal_keyboard(lang))
+    text = "🍽 <b>Добавить питание</b>\n\nВыбери приём пищи:" if lang == "ru" else "🍽 <b>Add nutrition</b>\n\nChoose a meal:"
+    await message.answer(text, parse_mode="HTML", reply_markup=meal_keyboard(lang))
 
 
 @router.message(_matches_menu("workout"))
@@ -40,7 +41,7 @@ async def workout_menu(message: Message, state: FSMContext) -> None:
     await state.clear(); await state.set_state(WorkoutStates.name)
     lang = language_code(message.from_user)
     text = "🏋️ <b>Новая тренировка</b>\n\nНазвание тренировки? Например: Грудь + трицепс" if lang == "ru" else "🏋️ <b>New workout</b>\n\nWorkout name? For example: Chest + triceps"
-    await message.answer(text, parse_mode="HTML", reply_markup=navigation_keyboard(lang))
+    await message.answer(text, parse_mode="HTML", reply_markup=navigation_keyboard(lang=lang))
 
 
 @router.message(_matches_menu("weight"))
@@ -48,7 +49,7 @@ async def weight_menu(message: Message, state: FSMContext) -> None:
     await state.clear(); await state.set_state(WeightStates.value)
     lang = language_code(message.from_user)
     text = "⚖️ <b>Записать вес</b>\n\nВведи текущий вес в кг, например: 82.4" if lang == "ru" else "⚖️ <b>Log weight</b>\n\nEnter your current weight in kg, for example: 82.4"
-    await message.answer(text, parse_mode="HTML", reply_markup=navigation_keyboard(lang))
+    await message.answer(text, parse_mode="HTML", reply_markup=navigation_keyboard(lang=lang))
 
 
 @router.message(_matches_menu("progress"))
@@ -56,7 +57,7 @@ async def progress_menu(message: Message, state: FSMContext) -> None:
     await state.clear(); await state.set_state(ProgressStates.exercise)
     lang = language_code(message.from_user)
     text = "📈 <b>Прогресс упражнения</b>\n\nКакое упражнение показать? Например: Жим лёжа" if lang == "ru" else "📈 <b>Exercise progress</b>\n\nWhich exercise should I show? For example: Bench press"
-    await message.answer(text, parse_mode="HTML", reply_markup=navigation_keyboard(lang))
+    await message.answer(text, parse_mode="HTML", reply_markup=navigation_keyboard(lang=lang))
 
 
 @router.message(_matches_menu("dashboard"))
