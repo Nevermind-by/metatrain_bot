@@ -4,7 +4,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from app.bot.states import ProfileStates
-from app.keyboards.main_menu import main_menu_keyboard
+from app.handlers.dashboard import _render
 from app.keyboards.profile import activity_keyboard, gender_keyboard, goal_keyboard
 from app.keyboards.profile_view import profile_keyboard
 from app.services.profile import ProfileService
@@ -13,10 +13,6 @@ from app.services.user import UserService
 router = Router(name="start")
 user_service = UserService()
 profile_service = ProfileService()
-
-
-async def _show_main_menu(message: Message) -> None:
-    await message.answer("Главное меню 👇", reply_markup=main_menu_keyboard())
 
 
 @router.message(CommandStart())
@@ -29,12 +25,7 @@ async def start_handler(message: Message, state: FSMContext) -> None:
         existing_profile = await profile_service.get_profile(user.id)
         if existing_profile is not None:
             await state.clear()
-            await message.answer(
-                "С возвращением! 👋\n\n" + profile_service.format_profile(existing_profile),
-                reply_markup=profile_keyboard(),
-                parse_mode="HTML",
-            )
-            await _show_main_menu(message)
+            await _render(message, user.id)
             return
 
     await state.clear()
@@ -143,10 +134,6 @@ async def goal_handler(callback: CallbackQuery, state: FSMContext) -> None:
     )
     await state.clear()
     if callback.message is not None:
-        await callback.message.edit_text(
-            "Профиль готов! 🎉\n\n" + profile_service.format_profile(profile),
-            parse_mode="HTML",
-            reply_markup=profile_keyboard(),
-        )
-        await callback.message.answer("Главное меню 👇", reply_markup=main_menu_keyboard())
+        await callback.message.edit_text("Профиль готов! 🎉")
+        await _render(callback, user_id)
     await callback.answer()
