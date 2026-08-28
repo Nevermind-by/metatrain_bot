@@ -7,6 +7,8 @@ Telegram-бот для расчёта калорий и БЖУ, учёта пи�
 - Python 3.14+
 - aiogram 3
 - aiosqlite
+- FastAPI
+- Uvicorn
 - pydantic-settings
 - Ruff
 
@@ -27,27 +29,43 @@ Telegram-бот для расчёта калорий и БЖУ, учёта пи�
 - `/dashboard` или `/stats` — общая сводка
 - `/cancel` — отмена текущего ввода
 - `/help` — список команд
+- `/webapp` — кнопка запуска Telegram Web App, если задан `WEB_APP_URL`
 
-## Запуск
+## Локальный запуск
 
 Создай `.env`:
 
 ```env
 BOT_TOKEN=your_telegram_bot_token
 DATABASE_PATH=data/metatrain.db
+WEB_APP_URL=https://your-public-domain.example.com
 ```
 
-Установка:
+Установка зависимостей:
 
 ```bash
 uv sync
 ```
 
-Запуск:
+Запуск бота:
 
 ```bash
 uv run python -m app.bot.main
 ```
+
+Запуск Web App/API отдельно:
+
+```bash
+uv run uvicorn app.api.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+После запуска API:
+
+- `http://127.0.0.1:8000/` — Web App
+- `http://127.0.0.1:8000/health` — health check
+- `http://127.0.0.1:8000/docs` — Swagger UI
+
+Для открытия Web App именно **в Telegram** нужен публичный HTTPS-адрес. Укажи его в `WEB_APP_URL`; локальный `127.0.0.1` предназначен для проверки в браузере.
 
 Тесты:
 
