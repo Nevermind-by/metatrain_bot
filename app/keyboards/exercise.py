@@ -49,3 +49,13 @@ def workout_set_keyboard(lang: str = "en") -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text="🔄 Другое упражнение" if lang == "ru" else "🔄 Another exercise", callback_data="workout:menu")],
         [InlineKeyboardButton(text="✅ Завершить" if lang == "ru" else "✅ Finish workout", callback_data="workout:finish"), InlineKeyboardButton(text="🏠 Дашборд" if lang == "ru" else "🏠 Dashboard", callback_data="dashboard:home")],
     ])
+
+
+def previous_set_keyboard(weight: float, reps: int, lang: str = "en") -> InlineKeyboardMarkup:
+    reuse = f"↩️ Повторить {weight:g} кг × {reps}" if lang == "ru" else f"↩️ Repeat {weight:g} kg × {reps}"
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=reuse, callback_data="workout:set:repeat")],
+        [InlineKeyboardButton(text="✏️ Ввести вручную" if lang == "ru" else "✏️ Enter manually", callback_data="workout:set:manual")],
+        [InlineKeyboardButton(text="🔄 Другое упражнение" if lang == "ru" else "🔄 Another exercise", callback_data="workout:menu")],
+        [InlineKeyboardButton(text="✅ Завершить" if lang == "ru" else "✅ Finish workout", callback_data="workout:finish"), InlineKeyboardButton(text="🏠 Дашборд" if lang == "ru" else "🏠 Dashboard", callback_data="dashboard:home")],
+    ])
