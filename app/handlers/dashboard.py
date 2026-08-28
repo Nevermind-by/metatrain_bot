@@ -2,6 +2,7 @@ from collections import defaultdict
 from datetime import datetime
 
 from aiogram import F, Router
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
@@ -31,13 +32,21 @@ async def _user(target: Message | CallbackQuery):
     return user
 
 
-async def _render(target: Message | CallbackQuery, user_id: int) -> None:
+async def _render(target: Message | CallbackQuery, user_id: int) -> bool:
     text = await dashboard_service.build(user_id)
     if isinstance(target, CallbackQuery):
         if target.message is not None:
-            await target.message.edit_text(text, parse_mode="HTML", reply_markup=dashboard_keyboard())
+            try:
+                await target.message.edit_text(
+                    text, parse_mode="HTML", reply_markup=dashboard_keyboard()
+                )
+            except TelegramBadRequest as exc:
+                if "message is not modified" not in str(exc).lower():
+                    raise
+                return False
     else:
         await target.answer(text, parse_mode="HTML", reply_markup=dashboard_keyboard())
+    return True
 
 
 @router.message(Command("dashboard", "stats"))
@@ -66,8 +75,8 @@ async def dashboard_refresh(callback: CallbackQuery) -> None:
     if user is None:
         await callback.answer("Сначала создай профиль", show_alert=True)
         return
-    await _render(callback, user.id)
-    await callback.answer("Обновлено")
+    updated = await _render(callback, user.id)
+    await callback.answer("Обновлено" if updated else "Всё актуально")
 
 
 @router.callback_query(F.data == "dashboard:food")
@@ -76,7 +85,7 @@ async def dashboard_food(callback: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(FoodStates.meal)
     if callback.message is not None:
         await callback.message.edit_text(
-            "🍽 <b>Добавить питание</b>\n\nВыбери приём пищи:",
+            "🍽 <b>Питание</b>\n\nВыбери действие:",
             parse_mode="HTML",
             reply_markup=meal_keyboard(),
         )
