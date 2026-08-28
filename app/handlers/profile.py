@@ -5,7 +5,6 @@ from aiogram.types import CallbackQuery, Message
 
 from app.bot.states import ProfileStates
 from app.keyboards.navigation import navigation_keyboard
-from app.keyboards.profile import activity_keyboard, gender_keyboard, goal_keyboard
 from app.keyboards.profile_edit import edit_profile_keyboard
 from app.keyboards.profile_edit_choices import activity_edit_keyboard, gender_edit_keyboard, goal_edit_keyboard
 from app.keyboards.profile_view import profile_keyboard
