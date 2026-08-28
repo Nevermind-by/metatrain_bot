@@ -25,6 +25,21 @@ class WorkoutRepository:
             await connection.commit()
         return workout_set
 
+    async def latest_set_for_exercise(self, user_id: int, exercise_name: str) -> WorkoutSet | None:
+        async with await get_connection() as connection:
+            cursor = await connection.execute(
+                """SELECT s.*
+                   FROM workout_sets s
+                   JOIN workout_exercises e ON e.id=s.exercise_id
+                   JOIN workout_entries w ON w.id=e.workout_id
+                   WHERE w.user_id=? AND lower(e.name)=lower(?)
+                   ORDER BY w.performed_at DESC, s.set_number DESC
+                   LIMIT 1""",
+                (user_id, exercise_name.strip()),
+            )
+            row = await cursor.fetchone()
+        return WorkoutSet(row["id"], row["exercise_id"], row["set_number"], row["weight_kg"], row["reps"], row["rpe"]) if row else None
+
     async def sets_for_exercise(self, exercise_id: int) -> list[WorkoutSet]:
         async with await get_connection() as connection:
             cursor = await connection.execute("SELECT * FROM workout_sets WHERE exercise_id=? ORDER BY set_number", (exercise_id,))
