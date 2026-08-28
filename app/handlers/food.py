@@ -6,15 +6,17 @@ from aiogram.types import CallbackQuery, Message
 from app.bot.states import FoodStates
 from app.keyboards.food_flow import meal_keyboard
 from app.keyboards.navigation import navigation_keyboard
-from app.keyboards.product import product_keyboard
+from app.keyboards.product import catalog_keyboard, catalog_start_keyboard, product_keyboard
 from app.repositories.recipe import RecipeRepository
 from app.services.food import MEALS, FoodService
+from app.services.food_catalog import FoodCatalogService
 from app.services.product import ProductService
 from app.services.profile import ProfileService
 from app.services.user import UserService
 
 router = Router(name="food")
 food_service = FoodService()
+food_catalog_service = FoodCatalogService()
 profile_service = ProfileService()
 product_service = ProductService()
 recipe_repository = RecipeRepository()
@@ -60,10 +62,90 @@ async def food_meal(callback: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(FoodStates.product_name)
     if callback.message is not None:
         if products or recipes:
-            await callback.message.edit_text("Выбери сохранённый продукт/блюдо или добавь новый продукт:", reply_markup=product_keyboard(products, recipes))
+            await callback.message.edit_text(
+                "🔎 <b>Что съел?</b>\n\nВыбери сохранённое блюдо или продукт либо найди продукт в каталоге:",
+                parse_mode="HTML",
+                reply_markup=product_keyboard(products, recipes),
+            )
         else:
-            await callback.message.edit_text("Название продукта:", reply_markup=navigation_keyboard())
+            await callback.message.edit_text(
+                "🔎 <b>Что съел?</b>\n\nНайди продукт в каталоге — например, «курица», «рис» или «творог 5%».",
+                parse_mode="HTML",
+                reply_markup=catalog_start_keyboard(),
+            )
     await callback.answer()
+
+
+@router.callback_query(F.data == "food:catalog:search")
+async def catalog_search_start(callback: CallbackQuery, state: FSMContext) -> None:
+    await state.set_state(FoodStates.product_name)
+    if callback.message is not None:
+        await callback.message.edit_text(
+            "🔎 <b>Поиск продукта</b>\n\nНапиши название продукта, например:\n• курица\n• куриная грудка\n• рис\n• творог 5%",
+            parse_mode="HTML",
+            reply_markup=navigation_keyboard(back_callback="dashboard:food", back_text="⬅️ Приём пищи"),
+        )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("food:catalog:"))
+async def catalog_product_selected(callback: CallbackQuery, state: FSMContext) -> None:
+    value = callback.data.rsplit(":", 1)[-1]
+    if not value.isdigit():
+        await callback.answer("Некорректный продукт", show_alert=True)
+        return
+    item = await food_catalog_service.get(int(value))
+    if item is None:
+        await callback.answer("Продукт не найден", show_alert=True)
+        return
+
+    await state.update_data(
+        product_name=item.name,
+        catalog_food_id=item.id,
+        calories=item.calories_per_100g,
+        protein=item.protein_per_100g,
+        fat=item.fat_per_100g,
+        carbohydrates=item.carbohydrates_per_100g,
+    )
+    await state.set_state(FoodStates.grams)
+
+    preparation = f" · {item.preparation}" if item.preparation else ""
+    brand = f" · {item.brand}" if item.brand else ""
+    text = (
+        f"🍽 <b>{item.name}</b>{preparation}{brand}\n\n"
+        f"На 100 г: {item.calories_per_100g:g} ккал · "
+        f"Б {item.protein_per_100g:g} г · Ж {item.fat_per_100g:g} г · У {item.carbohydrates_per_100g:g} г\n\n"
+        "Сколько граммов?"
+    )
+    if callback.message is not None:
+        await callback.message.edit_text(
+            text,
+            parse_mode="HTML",
+            reply_markup=navigation_keyboard(back_callback="food:catalog:search", back_text="⬅️ Новый поиск"),
+        )
+    await callback.answer()
+
+
+@router.message(FoodStates.product_name)
+async def food_name(message: Message, state: FSMContext) -> None:
+    name = (message.text or "").strip()
+    if not name:
+        await message.answer("Введи название продукта.", reply_markup=navigation_keyboard())
+        return
+
+    items = await food_catalog_service.search(name, limit=12)
+    if not items:
+        await message.answer(
+            "Ничего не нашёл. Попробуй более простое название, например «курица» или «рис».",
+            reply_markup=catalog_start_keyboard(),
+        )
+        return
+
+    await message.answer(
+        f"🔎 <b>Результаты для «{name}»</b>\n\nВыбери подходящий продукт:",
+        parse_mode="HTML",
+        reply_markup=catalog_keyboard(items),
+    )
 
 
 @router.callback_query(F.data.startswith("food:recipe:"))
@@ -102,28 +184,27 @@ async def saved_product(callback: CallbackQuery, state: FSMContext) -> None:
 async def new_product_for_food(callback: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(FoodStates.product_name)
     if callback.message is not None:
-        await callback.message.edit_text("Название продукта:", reply_markup=navigation_keyboard())
+        await callback.message.edit_text("🔎 Найди продукт в каталоге — напиши его название:", reply_markup=navigation_keyboard())
     await callback.answer()
-
-
-@router.message(FoodStates.product_name)
-async def food_name(message: Message, state: FSMContext) -> None:
-    name = (message.text or "").strip()
-    if not name:
-        await message.answer("Введи название продукта.", reply_markup=navigation_keyboard()); return
-    await state.update_data(product_name=name); await state.set_state(FoodStates.grams)
-    await message.answer("Сколько граммов? Например: 150", reply_markup=navigation_keyboard())
 
 
 @router.message(FoodStates.grams)
 async def food_grams(message: Message, state: FSMContext) -> None:
     data = await state.get_data()
-    try: grams = float((message.text or "").replace(",", "."))
-    except ValueError: await message.answer("Введи число, например: 150", reply_markup=navigation_keyboard()); return
-    if grams <= 0: await message.answer("Значение должно быть больше нуля.", reply_markup=navigation_keyboard()); return
+    try:
+        grams = float((message.text or "").replace(",", "."))
+    except ValueError:
+        await message.answer("Введи число, например: 150", reply_markup=navigation_keyboard())
+        return
+    if grams <= 0:
+        await message.answer("Значение должно быть больше нуля.", reply_markup=navigation_keyboard())
+        return
     if all(k in data for k in ("calories", "protein", "fat", "carbohydrates")):
         user_id = await _user_id(message.from_user.id) if message.from_user else None
-        if user_id is None: await state.clear(); await message.answer("Пользователь не найден. Используй /start.", reply_markup=navigation_keyboard()); return
+        if user_id is None:
+            await state.clear()
+            await message.answer("Пользователь не найден. Используй /start.", reply_markup=navigation_keyboard())
+            return
         entry = await food_service.add_product_entry(user_id=user_id, meal=data["meal"], product_name=data["product_name"], grams=grams, calories_per_100=data["calories"], protein_per_100=data["protein"], fat_per_100=data["fat"], carbohydrates_per_100=data["carbohydrates"])
         await state.clear()
         await message.answer(f"Добавлено ✅\n{entry.product_name} — {entry.quantity:g} г\n{entry.calories:g} ккал • Б {entry.protein:g} г • Ж {entry.fat:g} г • У {entry.carbohydrates:g}", reply_markup=navigation_keyboard())
