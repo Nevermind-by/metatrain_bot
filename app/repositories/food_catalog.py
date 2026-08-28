@@ -1,27 +1,44 @@
 from app.database.connection import get_connection
 from app.models.food_catalog import FoodCatalogItem
+from app.services.food_search import search_terms
 
 
 class FoodCatalogRepository:
     async def search(self, query: str, limit: int = 20) -> list[FoodCatalogItem]:
-        normalized = " ".join(query.casefold().split()).strip()
-        if not normalized:
+        terms = search_terms(query)
+        if not terms:
             return []
-        pattern = f"%{normalized}%"
-        async with await get_connection() as connection:
-            cursor = await connection.execute(
-                """SELECT f.* FROM food_catalog f
-                WHERE f.normalized_name LIKE ?
-                   OR EXISTS (
-                       SELECT 1 FROM food_aliases a
-                       WHERE a.food_id = f.id AND a.normalized_alias LIKE ?
-                   )
-                ORDER BY CASE WHEN f.normalized_name = ? THEN 0
-                              WHEN f.normalized_name LIKE ? THEN 1 ELSE 2 END,
-                         length(f.name), f.name
-                LIMIT ?""",
-                (pattern, pattern, normalized, f"{normalized}%", limit),
+
+        conditions: list[str] = []
+        params: list[object] = []
+        for term in terms:
+            pattern = f"%{term}%"
+            conditions.append(
+                "(f.normalized_name LIKE ? OR EXISTS ("
+                "SELECT 1 FROM food_aliases a "
+                "WHERE a.food_id = f.id AND a.normalized_alias LIKE ?))"
             )
+            params.extend((pattern, pattern))
+
+        # Rank the original query first, then translated terms.
+        ranking_parts: list[str] = []
+        for term in terms:
+            ranking_parts.append(
+                "CASE WHEN f.normalized_name = ? THEN 0 "
+                "WHEN f.normalized_name LIKE ? THEN 1 ELSE 2 END"
+            )
+            params.extend((term, f"{term}%"))
+
+        sql = f"""SELECT f.* FROM food_catalog f
+        WHERE {' OR '.join(conditions)}
+        ORDER BY {', '.join(ranking_parts)},
+                 CASE WHEN f.brand IS NULL OR f.brand = '' THEN 0 ELSE 1 END,
+                 length(f.name), f.name
+        LIMIT ?"""
+        params.append(limit)
+
+        async with await get_connection() as connection:
+            cursor = await connection.execute(sql, tuple(params))
             rows = await cursor.fetchall()
         return [self._to_model(row) for row in rows]
 
