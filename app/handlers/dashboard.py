@@ -6,13 +6,9 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
-from app.bot.states import (
-    FoodStates,
-    ProgressStates,
-    WeightStates,
-    WorkoutStates,
-)
+from app.bot.states import FoodStates, ProgressStates, WeightStates, WorkoutStates
 from app.keyboards.dashboard import dashboard_keyboard
+from app.keyboards.food_flow import meal_keyboard
 from app.keyboards.navigation import navigation_keyboard
 from app.services.dashboard import DashboardService
 from app.services.food import MEALS, FoodService
@@ -29,8 +25,7 @@ workout_service = WorkoutService()
 
 
 async def _user(target: Message | CallbackQuery):
-    telegram_id = target.from_user.id
-    user = await user_service.get_by_telegram_id(telegram_id)
+    user = await user_service.get_by_telegram_id(target.from_user.id)
     if user is None or user.id is None:
         return None
     return user
@@ -83,7 +78,7 @@ async def dashboard_food(callback: CallbackQuery, state: FSMContext) -> None:
         await callback.message.edit_text(
             "🍽 <b>Добавить питание</b>\n\nВыбери приём пищи:",
             parse_mode="HTML",
-            reply_markup=navigation_keyboard(),
+            reply_markup=meal_keyboard(),
         )
     await callback.answer()
 
@@ -198,7 +193,11 @@ async def dashboard_progress(callback: CallbackQuery, state: FSMContext) -> None
 
 @router.callback_query(F.data == "dashboard:profile")
 async def dashboard_profile(callback: CallbackQuery) -> None:
-    profile = await profile_service.get_profile((await _user(callback)).id)
+    user = await _user(callback)
+    if user is None:
+        await callback.answer("Сначала создай профиль", show_alert=True)
+        return
+    profile = await profile_service.get_profile(user.id)
     if callback.message is not None and profile is not None:
         from app.keyboards.profile_view import profile_keyboard
         await callback.message.edit_text(
