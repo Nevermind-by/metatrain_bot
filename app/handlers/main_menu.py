@@ -4,7 +4,9 @@ from aiogram.types import Message
 
 from app.bot.states import FoodStates, ProgressStates, WeightStates, WorkoutStates
 from app.handlers.dashboard import _render
+from app.keyboards.food_flow import meal_keyboard
 from app.keyboards.main_menu import MAIN_MENU_TEXTS
+from app.keyboards.navigation import navigation_keyboard
 from app.keyboards.profile_view import profile_keyboard
 from app.services.profile import ProfileService
 from app.services.user import UserService
@@ -23,30 +25,26 @@ async def _user_id(message: Message) -> int | None:
 
 @router.message(F.text == MAIN_MENU_TEXTS["food"])
 async def food_menu(message: Message, state: FSMContext) -> None:
-    await state.clear()
-    await state.set_state(FoodStates.meal)
-    await message.answer("Выбери приём пищи: завтрак, обед, ужин или перекус.")
+    await state.clear(); await state.set_state(FoodStates.meal)
+    await message.answer("🍽 <b>Добавить питание</b>\n\nВыбери приём пищи:", parse_mode="HTML", reply_markup=meal_keyboard())
 
 
 @router.message(F.text == MAIN_MENU_TEXTS["workout"])
 async def workout_menu(message: Message, state: FSMContext) -> None:
-    await state.clear()
-    await state.set_state(WorkoutStates.name)
-    await message.answer("Название тренировки? Например: Грудь + трицепс")
+    await state.clear(); await state.set_state(WorkoutStates.name)
+    await message.answer("🏋️ <b>Новая тренировка</b>\n\nНазвание тренировки? Например: Грудь + трицепс", parse_mode="HTML", reply_markup=navigation_keyboard())
 
 
 @router.message(F.text == MAIN_MENU_TEXTS["weight"])
 async def weight_menu(message: Message, state: FSMContext) -> None:
-    await state.clear()
-    await state.set_state(WeightStates.value)
-    await message.answer("Введи текущий вес в кг, например: 82.4")
+    await state.clear(); await state.set_state(WeightStates.value)
+    await message.answer("⚖️ <b>Записать вес</b>\n\nВведи текущий вес в кг, например: 82.4", parse_mode="HTML", reply_markup=navigation_keyboard())
 
 
 @router.message(F.text == MAIN_MENU_TEXTS["progress"])
 async def progress_menu(message: Message, state: FSMContext) -> None:
-    await state.clear()
-    await state.set_state(ProgressStates.exercise)
-    await message.answer("Какое упражнение показать? Например: Жим лёжа")
+    await state.clear(); await state.set_state(ProgressStates.exercise)
+    await message.answer("📈 <b>Прогресс упражнения</b>\n\nКакое упражнение показать? Например: Жим лёжа", parse_mode="HTML", reply_markup=navigation_keyboard())
 
 
 @router.message(F.text == MAIN_MENU_TEXTS["dashboard"])
