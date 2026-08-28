@@ -6,13 +6,25 @@ from aiogram.types import CallbackQuery, Message
 from app.bot.states import ProfileStates
 from app.handlers.dashboard import _render
 from app.keyboards.profile import activity_keyboard, gender_keyboard, goal_keyboard
-from app.keyboards.profile_view import profile_keyboard
 from app.services.profile import ProfileService
 from app.services.user import UserService
 
 router = Router(name="start")
 user_service = UserService()
 profile_service = ProfileService()
+
+
+WELCOME_TEXT = (
+    "<b>Добро пожаловать в MetaTrain! 👋</b>\n\n"
+    "Твой личный помощник для питания, тренировок и прогресса.\n\n"
+    "В одном месте ты сможешь:\n"
+    "🥗 вести питание и смотреть дневную норму\n"
+    "🏋️ записывать тренировки и отслеживать результаты\n"
+    "⚖️ контролировать вес\n"
+    "📈 видеть свой прогресс и историю\n\n"
+    "Никаких сложных команд — после настройки профиля всё будет доступно с главного экрана.\n\n"
+    "<b>Давай начнём с нескольких вопросов о тебе.</b>"
+)
 
 
 @router.message(CommandStart())
@@ -30,10 +42,11 @@ async def start_handler(message: Message, state: FSMContext) -> None:
 
     await state.clear()
     await state.update_data(user_id=user.id)
+    await message.answer(WELCOME_TEXT)
     await message.answer(
-        f"Привет, {user.first_name or 'друг'}! 👋\n\n"
-        "Давай настроим твой профиль.\n"
-        "Выбери пол:",
+        "<b>Настроим твой профиль</b> 👤\n\n"
+        "Это нужно, чтобы рассчитать твою персональную дневную норму и точнее подбирать рекомендации.\n\n"
+        "Начнём с пола:",
         reply_markup=gender_keyboard(),
     )
     await state.set_state(ProfileStates.gender)
@@ -123,7 +136,7 @@ async def goal_handler(callback: CallbackQuery, state: FSMContext) -> None:
         await callback.answer("Не удалось найти пользователя", show_alert=True)
         return
 
-    profile = await profile_service.create_profile(
+    await profile_service.create_profile(
         user_id=user_id,
         gender=data["gender"],
         age=data["age"],
@@ -134,6 +147,6 @@ async def goal_handler(callback: CallbackQuery, state: FSMContext) -> None:
     )
     await state.clear()
     if callback.message is not None:
-        await callback.message.edit_text("Профиль готов! 🎉")
+        await callback.message.edit_text("<b>Профиль готов! 🎉</b>")
         await _render(callback, user_id)
     await callback.answer()
