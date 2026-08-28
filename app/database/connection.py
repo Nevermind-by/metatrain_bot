@@ -39,6 +39,37 @@ async def init_database() -> None:
         names = {row[1] for row in columns}
         if "quantity" not in names: await connection.execute("ALTER TABLE food_entries ADD COLUMN quantity REAL NOT NULL DEFAULT 100")
         if "unit" not in names: await connection.execute("ALTER TABLE food_entries ADD COLUMN unit TEXT NOT NULL DEFAULT 'g'")
+
+        await connection.execute("""CREATE TABLE IF NOT EXISTS food_catalog (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            source TEXT NOT NULL,
+            source_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            normalized_name TEXT NOT NULL,
+            category TEXT,
+            brand TEXT,
+            preparation TEXT,
+            calories_per_100g REAL NOT NULL DEFAULT 0 CHECK (calories_per_100g >= 0),
+            protein_per_100g REAL NOT NULL DEFAULT 0 CHECK (protein_per_100g >= 0),
+            fat_per_100g REAL NOT NULL DEFAULT 0 CHECK (fat_per_100g >= 0),
+            carbohydrates_per_100g REAL NOT NULL DEFAULT 0 CHECK (carbohydrates_per_100g >= 0),
+            fiber_per_100g REAL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(source, source_id)
+        )""")
+        await connection.execute("CREATE INDEX IF NOT EXISTS idx_food_catalog_normalized_name ON food_catalog(normalized_name)")
+        await connection.execute("CREATE INDEX IF NOT EXISTS idx_food_catalog_category ON food_catalog(category)")
+        await connection.execute("""CREATE TABLE IF NOT EXISTS food_aliases (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            food_id INTEGER NOT NULL,
+            alias TEXT NOT NULL,
+            normalized_alias TEXT NOT NULL,
+            UNIQUE(food_id, normalized_alias),
+            FOREIGN KEY (food_id) REFERENCES food_catalog(id) ON DELETE CASCADE
+        )""")
+        await connection.execute("CREATE INDEX IF NOT EXISTS idx_food_aliases_normalized ON food_aliases(normalized_alias)")
+
         await connection.execute("""CREATE TABLE IF NOT EXISTS weight_entries (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, weight_kg REAL NOT NULL CHECK (weight_kg >= 30 AND weight_kg <= 300), measured_at TEXT NOT NULL, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE)""")
         await connection.execute("""CREATE TABLE IF NOT EXISTS workout_entries (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, name TEXT NOT NULL, duration_minutes INTEGER, calories_burned INTEGER, notes TEXT, performed_at TEXT NOT NULL, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE)""")
         await connection.execute("""CREATE TABLE IF NOT EXISTS workout_exercises (id INTEGER PRIMARY KEY AUTOINCREMENT, workout_id INTEGER NOT NULL, name TEXT NOT NULL, position INTEGER NOT NULL, FOREIGN KEY (workout_id) REFERENCES workout_entries(id) ON DELETE CASCADE)""")
