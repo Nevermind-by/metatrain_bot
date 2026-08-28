@@ -10,6 +10,7 @@ def edit_profile_keyboard() -> InlineKeyboardMarkup:
             [InlineKeyboardButton(text="⚖️ Вес", callback_data="profile:edit:weight")],
             [InlineKeyboardButton(text="🏃 Активность", callback_data="profile:edit:activity")],
             [InlineKeyboardButton(text="🎯 Цель", callback_data="profile:edit:goal")],
-            [InlineKeyboardButton(text="◀️ Назад", callback_data="profile:show")],
+            [InlineKeyboardButton(text="◀️ Профиль", callback_data="profile:show")],
+            [InlineKeyboardButton(text="🏠 Дашборд", callback_data="dashboard:home")],
         ]
     )
