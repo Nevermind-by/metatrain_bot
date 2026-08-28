@@ -11,3 +11,19 @@ def product_keyboard(products, recipes=None) -> InlineKeyboardMarkup:
     rows.append([InlineKeyboardButton(text="⬅️ Назад", callback_data="dashboard:food")])
     rows.append([InlineKeyboardButton(text="🏠 Дашборд", callback_data="dashboard:home")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def catalog_keyboard(items) -> InlineKeyboardMarkup:
+    rows = []
+    for item in items:
+        details = []
+        if item.preparation:
+            details.append(item.preparation)
+        if item.brand:
+            details.append(item.brand)
+        suffix = f" · {' · '.join(details)}" if details else ""
+        label = f"🍽 {item.name[:42 - len(suffix)]}{suffix}"
+        rows.append([InlineKeyboardButton(text=label[:64], callback_data=f"food:catalog:{item.id}")])
+    rows.append([InlineKeyboardButton(text="⬅️ Приём пищи", callback_data="dashboard:food")])
+    rows.append([InlineKeyboardButton(text="🏠 Дашборд", callback_data="dashboard:home")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
