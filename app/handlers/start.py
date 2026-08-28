@@ -4,6 +4,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from app.bot.states import ProfileStates
+from app.keyboards.main_menu import main_menu_keyboard
 from app.keyboards.profile import activity_keyboard, gender_keyboard, goal_keyboard
 from app.keyboards.profile_view import profile_keyboard
 from app.services.profile import ProfileService
@@ -12,6 +13,10 @@ from app.services.user import UserService
 router = Router(name="start")
 user_service = UserService()
 profile_service = ProfileService()
+
+
+async def _show_main_menu(message: Message) -> None:
+    await message.answer("Главное меню 👇", reply_markup=main_menu_keyboard())
 
 
 @router.message(CommandStart())
@@ -29,6 +34,7 @@ async def start_handler(message: Message, state: FSMContext) -> None:
                 reply_markup=profile_keyboard(),
                 parse_mode="HTML",
             )
+            await _show_main_menu(message)
             return
 
     await state.clear()
@@ -142,4 +148,5 @@ async def goal_handler(callback: CallbackQuery, state: FSMContext) -> None:
             parse_mode="HTML",
             reply_markup=profile_keyboard(),
         )
+        await callback.message.answer("Главное меню 👇", reply_markup=main_menu_keyboard())
     await callback.answer()
