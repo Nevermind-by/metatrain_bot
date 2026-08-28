@@ -18,7 +18,7 @@ from app.handlers.progress import router as progress_router
 from app.handlers.recipe import router as recipe_router
 from app.handlers.start import router as start_router
 from app.handlers.webapp import router as webapp_router
-from app.handlers.workout import router as workout_router
+from app.handlers.workout_session import router as workout_router
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +57,7 @@ async def main() -> None:
     dispatcher = Dispatcher()
     for router in (
         start_router,
+        workout_router,
         main_menu_router,
         webapp_router,
         profile_router,
@@ -66,7 +67,6 @@ async def main() -> None:
         progress_router,
         dashboard_router,
         history_router,
-        workout_router,
     ):
         dispatcher.include_router(router)
 
