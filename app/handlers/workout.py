@@ -1,11 +1,17 @@
-from aiogram import F, Router
+from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from app.bot.states import WorkoutStates
 from app.i18n import language_code
-from app.keyboards.exercise import exercise_categories, exercise_list, exercise_search_result, workout_set_keyboard
+from app.keyboards.exercise import (
+    exercise_categories,
+    exercise_list,
+    exercise_search_result,
+    previous_set_keyboard,
+    workout_set_keyboard,
+)
 from app.keyboards.navigation import navigation_keyboard
 from app.services.exercise_catalog import ExerciseCatalogService
 from app.services.user import UserService
@@ -88,6 +94,24 @@ async def workout_exercise_message(message: Message, state: FSMContext) -> None:
     await message.answer(title, parse_mode="HTML", reply_markup=exercise_search_result(items, lang))
 
 
+async def _show_first_set_prompt(callback: CallbackQuery, state: FSMContext, exercise_name: str, user_id: int) -> None:
+    lang = language_code(callback.from_user)
+    previous = await workout_service.latest_set_for_exercise(user_id, exercise_name)
+    if previous is not None:
+        await state.update_data(previous_weight=previous.weight_kg, previous_reps=previous.reps)
+        text = (
+            f"🏋️ <b>{exercise_name}</b>\n\nПодход 1\nПоследний раз: {previous.weight_kg:g} кг × {previous.reps}"
+            if lang == "ru"
+            else f"🏋️ <b>{exercise_name}</b>\n\nSet 1\nLast time: {previous.weight_kg:g} kg × {previous.reps}"
+        )
+        markup = previous_set_keyboard(previous.weight_kg, previous.reps, lang)
+    else:
+        text = f"🏋️ <b>{exercise_name}</b>\n\nПодход 1\nВес, кг:" if lang == "ru" else f"🏋️ <b>{exercise_name}</b>\n\nSet 1\nWeight, kg:"
+        markup = navigation_keyboard(lang=lang)
+    if callback.message is not None:
+        await callback.message.edit_text(text, parse_mode="HTML", reply_markup=markup)
+
+
 async def _start_selected_exercise(callback: CallbackQuery, state: FSMContext, exercise_id: int) -> None:
     lang = language_code(callback.from_user)
     user_id = await _user_id(callback.from_user.id)
@@ -103,9 +127,7 @@ async def _start_selected_exercise(callback: CallbackQuery, state: FSMContext, e
     exercise = await workout_service.add_exercise(workout_id=workout.id, name=item.name_ru if lang == "ru" else item.name_en, position=1)
     await state.update_data(workout_id=workout.id, exercise_id=exercise.id, exercise_name=exercise.name, set_number=1, exercise_position=1)
     await state.set_state(WorkoutStates.weight)
-    text = f"🏋️ <b>{exercise.name}</b>\n\nПодход 1\nВес, кг:" if lang == "ru" else f"🏋️ <b>{exercise.name}</b>\n\nSet 1\nWeight, kg:"
-    if callback.message is not None:
-        await callback.message.edit_text(text, parse_mode="HTML", reply_markup=navigation_keyboard(lang=lang))
+    await _show_first_set_prompt(callback, state, exercise.name, user_id)
 
 
 @router.callback_query(F.data.startswith("workout:exercise:"))
@@ -115,6 +137,34 @@ async def workout_exercise_selected(callback: CallbackQuery, state: FSMContext) 
         await callback.answer("Некорректное упражнение", show_alert=True)
         return
     await _start_selected_exercise(callback, state, int(value))
+    await callback.answer()
+
+
+@router.callback_query(F.data == "workout:set:repeat")
+async def workout_repeat_previous(callback: CallbackQuery, state: FSMContext) -> None:
+    lang = language_code(callback.from_user)
+    data = await state.get_data()
+    weight = data.get("previous_weight")
+    reps = data.get("previous_reps")
+    if weight is None or reps is None:
+        await callback.answer("Предыдущих данных нет" if lang == "ru" else "No previous data", show_alert=True)
+        return
+    await state.update_data(weight=float(weight), reps=int(reps))
+    await state.set_state(WorkoutStates.rpe)
+    text = "Повторения перенесены. Укажи RPE от 1 до 10 или 0, чтобы пропустить." if lang == "ru" else "Previous weight and reps copied. Enter RPE from 1 to 10, or 0 to skip."
+    if callback.message is not None:
+        await callback.message.edit_text(text, reply_markup=navigation_keyboard(lang=lang))
+    await callback.answer()
+
+
+@router.callback_query(F.data == "workout:set:manual")
+async def workout_manual_set(callback: CallbackQuery, state: FSMContext) -> None:
+    lang = language_code(callback.from_user)
+    data = await state.get_data()
+    set_number = int(data.get("set_number", 1))
+    await state.set_state(WorkoutStates.weight)
+    if callback.message is not None:
+        await callback.message.edit_text(f"Подход {set_number}\n\nВес, кг:" if lang == "ru" else f"Set {set_number}\n\nWeight, kg:", reply_markup=navigation_keyboard(lang=lang))
     await callback.answer()
 
 
