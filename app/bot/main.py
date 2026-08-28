@@ -17,6 +17,7 @@ from app.handlers.profile import router as profile_router
 from app.handlers.progress import router as progress_router
 from app.handlers.recipe import router as recipe_router
 from app.handlers.start import router as start_router
+from app.handlers.webapp import router as webapp_router
 from app.handlers.workout import router as workout_router
 
 logger = logging.getLogger(__name__)
@@ -33,6 +34,7 @@ BOT_COMMANDS = [
     BotCommand(command="workouts", description="История тренировок"),
     BotCommand(command="progress", description="Прогресс упражнения"),
     BotCommand(command="dashboard", description="Общая сводка"),
+    BotCommand(command="webapp", description="Открыть Web App"),
     BotCommand(command="help", description="Все возможности"),
 ]
 
@@ -48,6 +50,7 @@ async def main() -> None:
     for router in (
         start_router,
         main_menu_router,
+        webapp_router,
         profile_router,
         food_router,
         products_router,
