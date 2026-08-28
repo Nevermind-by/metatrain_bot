@@ -22,6 +22,14 @@ from app.handlers.workout import router as workout_router
 
 logger = logging.getLogger(__name__)
 
+BOT_NAME = "MetaTrain — твоя форма"
+BOT_SHORT_DESCRIPTION = "Питание, тренировки и прогресс — в одном месте."
+BOT_DESCRIPTION = (
+    "MetaTrain — твой помощник по питанию, тренировкам и прогрессу.\n\n"
+    "Настрой профиль, получи персональную дневную норму, веди питание и тренировки, "
+    "контролируй вес и следи за результатами.\n\n"
+    "Всё управление — через понятный дашборд внутри Telegram."
+)
 
 BOT_COMMANDS = [
     BotCommand(command="start", description="Главное меню"),
@@ -62,6 +70,9 @@ async def main() -> None:
     ):
         dispatcher.include_router(router)
 
+    await bot.set_my_name(BOT_NAME)
+    await bot.set_my_short_description(BOT_SHORT_DESCRIPTION)
+    await bot.set_my_description(BOT_DESCRIPTION)
     await bot.set_my_commands(BOT_COMMANDS)
     await init_database()
     logger.info("MetaTrain initialization completed.")
