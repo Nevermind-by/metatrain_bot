@@ -1,34 +1,30 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
-def gender_keyboard() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(text="👨 Мужчина", callback_data="profile:gender:male"),
-                InlineKeyboardButton(text="👩 Женщина", callback_data="profile:gender:female"),
-            ]
-        ]
-    )
+def gender_keyboard(lang: str = "en") -> InlineKeyboardMarkup:
+    labels = {"ru": ("👨 Мужчина", "👩 Женщина"), "en": ("👨 Male", "👩 Female")}
+    male, female = labels.get(lang, labels["en"])
+    return InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(text=male, callback_data="profile:gender:male"),
+        InlineKeyboardButton(text=female, callback_data="profile:gender:female"),
+    ]])
 
 
-def activity_keyboard() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="🪑 Минимальная", callback_data="profile:activity:sedentary")],
-            [InlineKeyboardButton(text="🚶 Лёгкая", callback_data="profile:activity:light")],
-            [InlineKeyboardButton(text="🏃 Средняя", callback_data="profile:activity:moderate")],
-            [InlineKeyboardButton(text="🏋️ Высокая", callback_data="profile:activity:high")],
-            [InlineKeyboardButton(text="🔥 Очень высокая", callback_data="profile:activity:very_high")],
-        ]
-    )
+def activity_keyboard(lang: str = "en") -> InlineKeyboardMarkup:
+    labels = {
+        "ru": [("🪑 Минимальная", "sedentary"), ("🚶 Лёгкая", "light"), ("🏃 Средняя", "moderate"), ("🏋️ Высокая", "high"), ("🔥 Очень высокая", "very_high")],
+        "en": [("🪑 Sedentary", "sedentary"), ("🚶 Light", "light"), ("🏃 Moderate", "moderate"), ("🏋️ High", "high"), ("🔥 Very high", "very_high")],
+    }
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=text, callback_data=f"profile:activity:{value}")] for text, value in labels.get(lang, labels["en"])
+    ])
 
 
-def goal_keyboard() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="🔥 Похудеть", callback_data="profile:goal:lose")],
-            [InlineKeyboardButton(text="⚖️ Поддерживать вес", callback_data="profile:goal:maintain")],
-            [InlineKeyboardButton(text="💪 Набрать массу", callback_data="profile:goal:gain")],
-        ]
-    )
+def goal_keyboard(lang: str = "en") -> InlineKeyboardMarkup:
+    labels = {
+        "ru": [("🔥 Похудеть", "lose"), ("⚖️ Поддерживать вес", "maintain"), ("💪 Набрать массу", "gain")],
+        "en": [("🔥 Lose weight", "lose"), ("⚖️ Maintain weight", "maintain"), ("💪 Gain muscle", "gain")],
+    }
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=text, callback_data=f"profile:goal:{value}")] for text, value in labels.get(lang, labels["en"])
+    ])
