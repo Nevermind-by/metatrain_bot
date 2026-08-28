@@ -8,4 +8,6 @@ def product_keyboard(products, recipes=None) -> InlineKeyboardMarkup:
     for r in recipes or []:
         rows.append([InlineKeyboardButton(text=f"🍲 {r.name[:35]}", callback_data=f"food:recipe:{r.id}")])
     rows.append([InlineKeyboardButton(text="➕ Новый продукт", callback_data="food:product:new")])
+    rows.append([InlineKeyboardButton(text="⬅️ Назад", callback_data="dashboard:food")])
+    rows.append([InlineKeyboardButton(text="🏠 Дашборд", callback_data="dashboard:home")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
