@@ -4,6 +4,7 @@ from aiogram.types import Message
 
 from app.bot.states import FoodStates, ProgressStates, WeightStates, WorkoutStates
 from app.handlers.dashboard import _render
+from app.handlers.workout import open_workout_menu
 from app.i18n import language_code
 from app.keyboards.food_flow import meal_keyboard
 from app.keyboards.main_menu import main_menu_texts
@@ -38,10 +39,7 @@ async def food_menu(message: Message, state: FSMContext) -> None:
 
 @router.message(_matches_menu("workout"))
 async def workout_menu(message: Message, state: FSMContext) -> None:
-    await state.clear(); await state.set_state(WorkoutStates.name)
-    lang = language_code(message.from_user)
-    text = "🏋️ <b>Новая тренировка</b>\n\nНазвание тренировки? Например: Грудь + трицепс" if lang == "ru" else "🏋️ <b>New workout</b>\n\nWorkout name? For example: Chest + triceps"
-    await message.answer(text, parse_mode="HTML", reply_markup=navigation_keyboard(lang=lang))
+    await open_workout_menu(message, state)
 
 
 @router.message(_matches_menu("weight"))
