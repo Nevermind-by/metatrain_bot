@@ -8,6 +8,7 @@ from aiogram.types import CallbackQuery, Message
 from app.bot.states import FoodStates, ProgressStates, WeightStates, WorkoutStates
 from app.i18n import language_code
 from app.keyboards.dashboard import dashboard_keyboard
+from app.keyboards.exercise import exercise_categories
 from app.keyboards.food_flow import meal_keyboard
 from app.keyboards.navigation import navigation_keyboard
 from app.services.dashboard import DashboardService
@@ -83,8 +84,9 @@ async def dashboard_history(callback: CallbackQuery) -> None:
     await callback.answer()
 @router.callback_query(F.data == "dashboard:workout")
 async def dashboard_workout(callback: CallbackQuery, state: FSMContext) -> None:
-    await state.clear(); await state.set_state(WorkoutStates.name); lang = language_code(callback.from_user); text = "🏋️ <b>Новая тренировка</b>\n\nНазвание тренировки?\nНапример: Грудь + трицепс" if lang == "ru" else "🏋️ <b>New workout</b>\n\nWorkout name?\nFor example: Chest + triceps"
-    if callback.message is not None: await callback.message.edit_text(text, parse_mode="HTML", reply_markup=navigation_keyboard(lang=lang))
+    await state.clear(); await state.set_state(WorkoutStates.category); lang = language_code(callback.from_user)
+    text = "🏋️ <b>Новая тренировка</b>\n\nВыбери группу мышц или найди упражнение:" if lang == "ru" else "🏋️ <b>New workout</b>\n\nChoose a muscle group or search for an exercise:"
+    if callback.message is not None: await callback.message.edit_text(text, parse_mode="HTML", reply_markup=exercise_categories(lang))
     await callback.answer()
 @router.callback_query(F.data == "dashboard:workouts")
 async def dashboard_workouts(callback: CallbackQuery) -> None:
