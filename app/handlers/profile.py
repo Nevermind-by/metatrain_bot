@@ -4,6 +4,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from app.bot.states import ProfileStates
+from app.keyboards.navigation import navigation_keyboard
 from app.keyboards.profile import activity_keyboard, gender_keyboard, goal_keyboard
 from app.keyboards.profile_edit import edit_profile_keyboard
 from app.keyboards.profile_view import profile_keyboard
@@ -72,7 +73,7 @@ async def edit_gender_handler(callback: CallbackQuery, state: FSMContext) -> Non
 async def edit_age_callback(callback: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(ProfileStates.edit_age)
     if callback.message is not None:
-        await callback.message.edit_text("Введи новый возраст (14–100 лет).")
+        await callback.message.edit_text("Введи новый возраст (14–100 лет).", reply_markup=navigation_keyboard(back_callback="profile:show", back_text="◀️ Профиль"))
     await callback.answer()
 
 
@@ -81,10 +82,10 @@ async def edit_age_handler(message: Message, state: FSMContext) -> None:
     try:
         age = int(message.text or "")
     except ValueError:
-        await message.answer("Введи возраст целым числом, например: 28")
+        await message.answer("Введи возраст целым числом, например: 28", reply_markup=navigation_keyboard(back_callback="profile:show", back_text="◀️ Профиль"))
         return
     if not 14 <= age <= 100:
-        await message.answer("Возраст должен быть от 14 до 100 лет.")
+        await message.answer("Возраст должен быть от 14 до 100 лет.", reply_markup=navigation_keyboard(back_callback="profile:show", back_text="◀️ Профиль"))
         return
     await _save_edited_message_field(message, state, "age", age)
 
@@ -93,7 +94,7 @@ async def edit_age_handler(message: Message, state: FSMContext) -> None:
 async def edit_height_callback(callback: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(ProfileStates.edit_height)
     if callback.message is not None:
-        await callback.message.edit_text("Введи новый рост в сантиметрах (120–230).")
+        await callback.message.edit_text("Введи новый рост в сантиметрах (120–230).", reply_markup=navigation_keyboard(back_callback="profile:show", back_text="◀️ Профиль"))
     await callback.answer()
 
 
@@ -102,10 +103,10 @@ async def edit_height_handler(message: Message, state: FSMContext) -> None:
     try:
         height = float((message.text or "").replace(",", "."))
     except ValueError:
-        await message.answer("Введи рост числом, например: 180")
+        await message.answer("Введи рост числом, например: 180", reply_markup=navigation_keyboard(back_callback="profile:show", back_text="◀️ Профиль"))
         return
     if not 120 <= height <= 230:
-        await message.answer("Рост должен быть от 120 до 230 см.")
+        await message.answer("Рост должен быть от 120 до 230 см.", reply_markup=navigation_keyboard(back_callback="profile:show", back_text="◀️ Профиль"))
         return
     await _save_edited_message_field(message, state, "height_cm", height)
 
@@ -114,7 +115,7 @@ async def edit_height_handler(message: Message, state: FSMContext) -> None:
 async def edit_weight_callback(callback: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(ProfileStates.edit_weight)
     if callback.message is not None:
-        await callback.message.edit_text("Введи новый вес в килограммах (30–300).")
+        await callback.message.edit_text("Введи новый вес в килограммах (30–300).", reply_markup=navigation_keyboard(back_callback="profile:show", back_text="◀️ Профиль"))
     await callback.answer()
 
 
@@ -123,10 +124,10 @@ async def edit_weight_handler(message: Message, state: FSMContext) -> None:
     try:
         weight = float((message.text or "").replace(",", "."))
     except ValueError:
-        await message.answer("Введи вес числом, например: 80")
+        await message.answer("Введи вес числом, например: 80", reply_markup=navigation_keyboard(back_callback="profile:show", back_text="◀️ Профиль"))
         return
     if not 30 <= weight <= 300:
-        await message.answer("Вес должен быть от 30 до 300 кг.")
+        await message.answer("Вес должен быть от 30 до 300 кг.", reply_markup=navigation_keyboard(back_callback="profile:show", back_text="◀️ Профиль"))
         return
     await _save_edited_message_field(message, state, "weight_kg", weight)
 
@@ -200,7 +201,7 @@ async def _save_edited_message_field(message: Message, state: FSMContext, field:
     try:
         updated = await _save_values(message.from_user.id, field, value)
     except LookupError as error:
-        await message.answer(str(error))
+        await message.answer(str(error), reply_markup=navigation_keyboard(back_callback="profile:show", back_text="◀️ Профиль"))
         await state.clear()
         return
     await state.clear()
