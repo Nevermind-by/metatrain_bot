@@ -5,6 +5,7 @@ from aiogram.types import CallbackQuery, Message
 
 from app.bot.states import FoodStates
 from app.keyboards.food import meal_keyboard
+from app.keyboards.navigation import navigation_keyboard
 from app.keyboards.product import product_keyboard
 from app.repositories.recipe import RecipeRepository
 from app.services.food import MEALS, FoodService
@@ -34,13 +35,13 @@ async def food_start(message: Message, state: FSMContext) -> None:
         return
     await state.clear()
     await state.set_state(FoodStates.meal)
-    await message.answer("Куда добавить продукт или блюдо?", reply_markup=meal_keyboard())
+    await message.answer("🍽 <b>Добавить питание</b>\n\nКуда добавить продукт или блюдо?", parse_mode="HTML", reply_markup=meal_keyboard())
 
 
 @router.message(Command("cancel"))
 async def food_cancel(message: Message, state: FSMContext) -> None:
     await state.clear()
-    await message.answer("Операция отменена.")
+    await message.answer("Операция отменена.", reply_markup=navigation_keyboard())
 
 
 @router.callback_query(FoodStates.meal, F.data.startswith("food:meal:"))
@@ -64,7 +65,7 @@ async def food_meal(callback: CallbackQuery, state: FSMContext) -> None:
                 reply_markup=product_keyboard(products, recipes),
             )
         else:
-            await callback.message.edit_text("Название продукта:\n\n/cancel — отменить")
+            await callback.message.edit_text("Название продукта:", reply_markup=navigation_keyboard())
     await callback.answer()
 
 
@@ -88,7 +89,7 @@ async def saved_recipe(callback: CallbackQuery, state: FSMContext) -> None:
     )
     await state.set_state(FoodStates.recipe)
     if callback.message is not None:
-        await callback.message.edit_text(f"{recipe.name}\nСколько порций? Например: 1.5")
+        await callback.message.edit_text(f"{recipe.name}\nСколько порций? Например: 1.5", reply_markup=navigation_keyboard())
     await callback.answer()
 
 
@@ -112,7 +113,7 @@ async def saved_product(callback: CallbackQuery, state: FSMContext) -> None:
     )
     await state.set_state(FoodStates.grams)
     if callback.message is not None:
-        await callback.message.edit_text(f"{product.name}\nСколько граммов? Например: 150")
+        await callback.message.edit_text(f"{product.name}\nСколько граммов? Например: 150", reply_markup=navigation_keyboard())
     await callback.answer()
 
 
@@ -120,7 +121,7 @@ async def saved_product(callback: CallbackQuery, state: FSMContext) -> None:
 async def new_product_for_food(callback: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(FoodStates.product_name)
     if callback.message is not None:
-        await callback.message.edit_text("Название продукта:\n\n/cancel — отменить")
+        await callback.message.edit_text("Название продукта:", reply_markup=navigation_keyboard())
     await callback.answer()
 
 
@@ -128,11 +129,11 @@ async def new_product_for_food(callback: CallbackQuery, state: FSMContext) -> No
 async def food_name(message: Message, state: FSMContext) -> None:
     name = (message.text or "").strip()
     if not name:
-        await message.answer("Введи название продукта.")
+        await message.answer("Введи название продукта.", reply_markup=navigation_keyboard())
         return
     await state.update_data(product_name=name)
     await state.set_state(FoodStates.grams)
-    await message.answer("Сколько граммов? Например: 150")
+    await message.answer("Сколько граммов? Например: 150", reply_markup=navigation_keyboard())
 
 
 @router.message(FoodStates.grams)
@@ -141,15 +142,15 @@ async def food_grams(message: Message, state: FSMContext) -> None:
     try:
         grams = float((message.text or "").replace(",", "."))
     except ValueError:
-        await message.answer("Введи число, например: 150")
+        await message.answer("Введи число, например: 150", reply_markup=navigation_keyboard())
         return
     if grams <= 0:
-        await message.answer("Значение должно быть больше нуля.")
+        await message.answer("Значение должно быть больше нуля.", reply_markup=navigation_keyboard())
         return
     if all(k in data for k in ("calories", "protein", "fat", "carbohydrates")):
         user_id = await _user_id(message.from_user.id) if message.from_user else None
         if user_id is None:
-            await state.clear(); await message.answer("Пользователь не найден. Используй /start."); return
+            await state.clear(); await message.answer("Пользователь не найден. Используй /start.", reply_markup=navigation_keyboard()); return
         entry = await food_service.add_product_entry(
             user_id=user_id, meal=data["meal"], product_name=data["product_name"], grams=grams,
             calories_per_100=data["calories"], protein_per_100=data["protein"],
@@ -158,12 +159,13 @@ async def food_grams(message: Message, state: FSMContext) -> None:
         await state.clear()
         await message.answer(
             f"Добавлено ✅\n{entry.product_name} — {entry.quantity:g} г\n"
-            f"{entry.calories:g} ккал • Б {entry.protein:g} г • Ж {entry.fat:g} г • У {entry.carbohydrates:g}\n\n/today"
+            f"{entry.calories:g} ккал • Б {entry.protein:g} г • Ж {entry.fat:g} г • У {entry.carbohydrates:g}",
+            reply_markup=navigation_keyboard(),
         )
         return
     await state.update_data(grams=grams)
     await state.set_state(FoodStates.calories)
-    await message.answer("Калорийность на 100 г?")
+    await message.answer("Калорийность на 100 г?", reply_markup=navigation_keyboard())
 
 
 @router.message(FoodStates.recipe)
@@ -172,14 +174,14 @@ async def recipe_servings(message: Message, state: FSMContext) -> None:
     try:
         servings = float((message.text or "").replace(",", "."))
     except ValueError:
-        await message.answer("Введи число, например: 1.5")
+        await message.answer("Введи число, например: 1.5", reply_markup=navigation_keyboard())
         return
     if servings <= 0:
-        await message.answer("Количество порций должно быть больше нуля.")
+        await message.answer("Количество порций должно быть больше нуля.", reply_markup=navigation_keyboard())
         return
     user_id = await _user_id(message.from_user.id) if message.from_user else None
     if user_id is None:
-        await state.clear(); await message.answer("Пользователь не найден. Используй /start."); return
+        await state.clear(); await message.answer("Пользователь не найден. Используй /start.", reply_markup=navigation_keyboard()); return
     entry = await food_service.add_recipe_entry(
         user_id=user_id, meal=data["meal"], recipe_name=data["recipe_name"], servings=servings,
         calories_per_serving=data["calories_per_serving"], protein_per_serving=data["protein_per_serving"],
@@ -188,7 +190,8 @@ async def recipe_servings(message: Message, state: FSMContext) -> None:
     await state.clear()
     await message.answer(
         f"Добавлено ✅\n🍲 {entry.product_name} — {entry.quantity:g} порц.\n"
-        f"{entry.calories:g} ккал • Б {entry.protein:g} г • Ж {entry.fat:g} г • У {entry.carbohydrates:g}\n\n/today"
+        f"{entry.calories:g} ккал • Б {entry.protein:g} г • Ж {entry.fat:g} г • У {entry.carbohydrates:g}",
+        reply_markup=navigation_keyboard(),
     )
 
 
@@ -196,14 +199,14 @@ async def _numeric(message: Message, state: FSMContext, next_state: object, key:
     try:
         value = float((message.text or "").replace(",", "."))
     except ValueError:
-        await message.answer("Введи число, например: 12.5")
+        await message.answer("Введи число, например: 12.5", reply_markup=navigation_keyboard())
         return
     if value < 0:
-        await message.answer("Значение не может быть отрицательным.")
+        await message.answer("Значение не может быть отрицательным.", reply_markup=navigation_keyboard())
         return
     await state.update_data(**{key: value})
     await state.set_state(next_state)
-    await message.answer(prompt)
+    await message.answer(prompt, reply_markup=navigation_keyboard())
 
 
 @router.message(FoodStates.calories)
@@ -226,15 +229,15 @@ async def food_carbohydrates(message: Message, state: FSMContext) -> None:
     try:
         value = float((message.text or "").replace(",", "."))
     except ValueError:
-        await message.answer("Введи число, например: 20")
+        await message.answer("Введи число, например: 20", reply_markup=navigation_keyboard())
         return
     if value < 0:
-        await message.answer("Значение не может быть отрицательным.")
+        await message.answer("Значение не может быть отрицательным.", reply_markup=navigation_keyboard())
         return
     data = await state.get_data()
     await state.update_data(carbohydrates=value)
     await state.set_state(FoodStates.grams)
-    await message.answer(f"{data.get('product_name', 'Продукт')}: теперь введи вес в граммах.")
+    await message.answer(f"{data.get('product_name', 'Продукт')}: теперь введи вес в граммах.", reply_markup=navigation_keyboard())
 
 
 @router.message(Command("today"))
@@ -247,14 +250,14 @@ async def today_handler(message: Message) -> None:
     totals = food_service.totals(entries)
     profile = await profile_service.get_profile(user_id)
     if not entries:
-        await message.answer("Сегодня пока ничего не записано. Используй /food."); return
+        await message.answer("Сегодня пока ничего не записано.", reply_markup=navigation_keyboard()); return
     lines = ["📅 <b>Сегодня</b>", ""]
     for entry in entries:
         lines.append(f"#{entry.id} {MEALS[entry.meal]}: {entry.product_name} — {entry.quantity:g} {entry.unit} ({entry.calories:g} ккал)")
     lines += ["", f"🔥 {totals['calories']:g} ккал", f"🥩 Б {totals['protein']:g} г", f"🥑 Ж {totals['fat']:g} г", f"🍚 У {totals['carbohydrates']:g} г"]
     if profile:
-        lines += ["", f"🎯 Цель: {profile.calories} ккал", f"Осталось: {max(0, profile.calories - totals['calories']):g} ккал", "Удалить: /delete_food <id>"]
-    await message.answer("\n".join(lines), parse_mode="HTML")
+        lines += ["", f"🎯 Цель: {profile.calories} ккал", f"Осталось: {max(0, profile.calories - totals['calories']):g} ккал"]
+    await message.answer("\n".join(lines), parse_mode="HTML", reply_markup=navigation_keyboard())
 
 
 @router.message(Command("delete_food"))
@@ -265,5 +268,5 @@ async def delete_food(message: Message) -> None:
         await message.answer("Сначала создай профиль через /start."); return
     parts = (message.text or "").split(maxsplit=1)
     if len(parts) != 2 or not parts[1].isdigit():
-        await message.answer("Используй: /delete_food <id>"); return
-    await message.answer("Запись удалена ✅" if await food_service.delete(user_id, int(parts[1])) else "Запись не найдена.")
+        await message.answer("Используй: /delete_food <id>", reply_markup=navigation_keyboard()); return
+    await message.answer("Запись удалена ✅" if await food_service.delete(user_id, int(parts[1])) else "Запись не найдена.", reply_markup=navigation_keyboard())
