@@ -3,20 +3,14 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 def exercise_categories(lang: str = "en") -> InlineKeyboardMarkup:
     labels = {
-        "chest": ("💪 Грудь", "💪 Chest"),
-        "back": ("🪽 Спина", "🪽 Back"),
-        "legs": ("🦵 Ноги", "🦵 Legs"),
-        "shoulders": ("🏋️ Плечи", "🏋️ Shoulders"),
-        "arms": ("💪 Руки", "💪 Arms"),
-        "core": ("🔥 Пресс", "🔥 Core"),
+        "chest": ("💪 Грудь", "💪 Chest"), "back": ("🪽 Спина", "🪽 Back"),
+        "legs": ("🦵 Ноги", "🦵 Legs"), "shoulders": ("🏋️ Плечи", "🏋️ Shoulders"),
+        "arms": ("💪 Руки", "💪 Arms"), "core": ("🔥 Пресс", "🔥 Core"),
     }
-    keys = list(labels)
     rows = []
+    keys = list(labels)
     for i in range(0, len(keys), 2):
-        row = []
-        for key in keys[i:i + 2]:
-            row.append(InlineKeyboardButton(text=labels[key][0 if lang == "ru" else 1], callback_data=f"workout:category:{key}"))
-        rows.append(row)
+        rows.append([InlineKeyboardButton(text=labels[k][0 if lang == "ru" else 1], callback_data=f"workout:category:{k}") for k in keys[i:i + 2]])
     rows.append([InlineKeyboardButton(text="🔎 Поиск" if lang == "ru" else "🔎 Search", callback_data="workout:search")])
     rows.append([InlineKeyboardButton(text="🏠 Дашборд" if lang == "ru" else "🏠 Dashboard", callback_data="dashboard:home")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
@@ -43,10 +37,19 @@ def exercise_search_result(items, lang: str = "en") -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
+def current_workout_keyboard(lang: str = "en") -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="➕ Добавить упражнение" if lang == "ru" else "➕ Add exercise", callback_data="workout:add")],
+        [InlineKeyboardButton(text="🏠 Дашборд" if lang == "ru" else "🏠 Dashboard", callback_data="dashboard:home")],
+        [InlineKeyboardButton(text="✅ Завершить" if lang == "ru" else "✅ Finish workout", callback_data="workout:finish")],
+    ])
+
+
 def workout_set_keyboard(lang: str = "en") -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="➕ Следующий подход" if lang == "ru" else "➕ Next set", callback_data="workout:set:next")],
-        [InlineKeyboardButton(text="🔄 Другое упражнение" if lang == "ru" else "🔄 Another exercise", callback_data="workout:menu")],
+        [InlineKeyboardButton(text="📋 Текущая тренировка" if lang == "ru" else "📋 Current workout", callback_data="workout:current")],
+        [InlineKeyboardButton(text="🔄 Другое упражнение" if lang == "ru" else "🔄 Another exercise", callback_data="workout:add")],
         [InlineKeyboardButton(text="✅ Завершить" if lang == "ru" else "✅ Finish workout", callback_data="workout:finish"), InlineKeyboardButton(text="🏠 Дашборд" if lang == "ru" else "🏠 Dashboard", callback_data="dashboard:home")],
     ])
 
@@ -56,6 +59,7 @@ def previous_set_keyboard(weight: float, reps: int, lang: str = "en") -> InlineK
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=reuse, callback_data="workout:set:repeat")],
         [InlineKeyboardButton(text="✏️ Ввести вручную" if lang == "ru" else "✏️ Enter manually", callback_data="workout:set:manual")],
-        [InlineKeyboardButton(text="🔄 Другое упражнение" if lang == "ru" else "🔄 Another exercise", callback_data="workout:menu")],
+        [InlineKeyboardButton(text="📋 Текущая тренировка" if lang == "ru" else "📋 Current workout", callback_data="workout:current")],
+        [InlineKeyboardButton(text="🔄 Другое упражнение" if lang == "ru" else "🔄 Another exercise", callback_data="workout:add")],
         [InlineKeyboardButton(text="✅ Завершить" if lang == "ru" else "✅ Finish workout", callback_data="workout:finish"), InlineKeyboardButton(text="🏠 Дашборд" if lang == "ru" else "🏠 Dashboard", callback_data="dashboard:home")],
     ])
