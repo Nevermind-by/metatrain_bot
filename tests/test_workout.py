@@ -1,5 +1,6 @@
 import unittest
 
+from app.models.workout import WorkoutSet
 from app.services.workout import WorkoutService
 
 
@@ -59,7 +60,7 @@ class WorkoutServiceTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_update_set_changes_values(self) -> None:
         repository = FakeWorkoutRepository()
-        original = await repository.add_set(WorkoutService(repository).repository and __import__("app.models.workout", fromlist=["WorkoutSet"]).WorkoutSet(None, 2, 1, 50, 8, 8))
+        await repository.add_set(WorkoutSet(None, 2, 1, 50, 8, 8))
         service = WorkoutService(repository)
         result = await service.update_set(set_id=3, user_id=20, weight_kg=55, reps=10, rpe=9)
         self.assertIsNotNone(result)
