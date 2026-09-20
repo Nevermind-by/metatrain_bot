@@ -37,10 +37,10 @@ def exercise_search_result(items, lang: str = "en") -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def current_workout_keyboard(lang: str = "en", exercise_ids: list[int] | None = None) -> InlineKeyboardMarkup:
+def current_workout_keyboard(lang: str = "en", exercise_items: list[tuple[int, str]] | None = None) -> InlineKeyboardMarkup:
     rows = []
-    for exercise_id in exercise_ids or []:
-        rows.append([InlineKeyboardButton(text="✏️ Упражнение" if lang == "ru" else "✏️ Exercise", callback_data=f"workout:current:exercise:{exercise_id}")])
+    for exercise_id, exercise_name in exercise_items or []:
+        rows.append([InlineKeyboardButton(text=f"✏️ {exercise_name}"[:64], callback_data=f"workout:current:exercise:{exercise_id}")])
     rows.extend([
         [InlineKeyboardButton(text="➕ Добавить упражнение" if lang == "ru" else "➕ Add exercise", callback_data="workout:add")],
         [InlineKeyboardButton(text="🏠 Дашборд" if lang == "ru" else "🏠 Dashboard", callback_data="dashboard:home")],
@@ -50,14 +50,18 @@ def current_workout_keyboard(lang: str = "en", exercise_ids: list[int] | None = 
 
 
 def current_exercise_keyboard(set_ids: list[int], lang: str = "en") -> InlineKeyboardMarkup:
-    rows = [[InlineKeyboardButton(text=f"🗑️ Подход {i + 1}" if lang == "ru" else f"🗑️ Set {i + 1}", callback_data=f"workout:set:delete:{set_id}")] for i, set_id in enumerate(set_ids)]
+    rows = []
+    for i, set_id in enumerate(set_ids, 1):
+        rows.append([
+            InlineKeyboardButton(text=f"✏️ {('Подход' if lang == 'ru' else 'Set')} {i}", callback_data=f"workout:set:edit:{set_id}"),
+            InlineKeyboardButton(text=f"🗑️ {('Удалить' if lang == 'ru' else 'Delete')}", callback_data=f"workout:set:delete:{set_id}"),
+        ])
     rows.extend([
         [InlineKeyboardButton(text="➕ Следующий подход" if lang == "ru" else "➕ Next set", callback_data="workout:set:next")],
         [InlineKeyboardButton(text="◀️ Текущая тренировка" if lang == "ru" else "◀️ Current workout", callback_data="workout:current")],
         [InlineKeyboardButton(text="🏠 Дашборд" if lang == "ru" else "🏠 Dashboard", callback_data="dashboard:home")],
     ])
     return InlineKeyboardMarkup(inline_keyboard=rows)
-
 
 def workout_set_keyboard(lang: str = "en") -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
