@@ -64,7 +64,9 @@ async def dashboard_home(callback: CallbackQuery, state: FSMContext) -> None:
         if active is not None and active.id is not None:
             active_workout = True
             await state.update_data(workout_id=active.id)
-    if not active_workout:
+    if active_workout:
+        await state.set_state(None)
+    else:
         await state.clear()
     await _render(callback, user.id, active_workout=active_workout)
     await callback.answer()
@@ -78,6 +80,8 @@ async def dashboard_refresh(callback: CallbackQuery, state: FSMContext) -> None:
         if active is not None and active.id is not None:
             active_workout = True
             await state.update_data(workout_id=active.id)
+    if active_workout:
+        await state.set_state(None)
     updated = await _render(callback, user.id, active_workout=active_workout)
     await callback.answer(("Обновлено" if updated else "Всё актуально") if lang == "ru" else ("Updated" if updated else "Already up to date"))
 @router.callback_query(F.data == "dashboard:food")
