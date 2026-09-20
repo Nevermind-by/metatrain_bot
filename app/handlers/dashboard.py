@@ -46,6 +46,11 @@ async def dashboard_handler(message: Message, state: FSMContext) -> None:
     user = await _user(message); lang = language_code(message.from_user)
     if user is None: await message.answer("Сначала создай профиль через /start." if lang == "ru" else "Create your profile with /start first."); return
     active_workout = bool((await state.get_data()).get("workout_id"))
+    if not active_workout:
+        active = await workout_service.active_for_user(user.id)
+        if active is not None and active.id is not None:
+            active_workout = True
+            await state.update_data(workout_id=active.id)
     await _render(message, user.id, active_workout=active_workout)
 @router.callback_query(F.data == "dashboard:home")
 async def dashboard_home(callback: CallbackQuery, state: FSMContext) -> None:
@@ -53,6 +58,11 @@ async def dashboard_home(callback: CallbackQuery, state: FSMContext) -> None:
     if user is None: await callback.answer("Сначала создай профиль" if lang == "ru" else "Create your profile first", show_alert=True); return
     data = await state.get_data()
     active_workout = bool(data.get("workout_id"))
+    if not active_workout:
+        active = await workout_service.active_for_user(user.id)
+        if active is not None and active.id is not None:
+            active_workout = True
+            await state.update_data(workout_id=active.id)
     if not active_workout:
         await state.clear()
     await _render(callback, user.id, active_workout=active_workout)
@@ -62,6 +72,11 @@ async def dashboard_refresh(callback: CallbackQuery, state: FSMContext) -> None:
     user = await _user(callback); lang = language_code(callback.from_user)
     if user is None: await callback.answer("Сначала создай профиль" if lang == "ru" else "Create your profile first", show_alert=True); return
     active_workout = bool((await state.get_data()).get("workout_id"))
+    if not active_workout:
+        active = await workout_service.active_for_user(user.id)
+        if active is not None and active.id is not None:
+            active_workout = True
+            await state.update_data(workout_id=active.id)
     updated = await _render(callback, user.id, active_workout=active_workout)
     await callback.answer(("Обновлено" if updated else "Всё актуально") if lang == "ru" else ("Updated" if updated else "Already up to date"))
 @router.callback_query(F.data == "dashboard:food")
