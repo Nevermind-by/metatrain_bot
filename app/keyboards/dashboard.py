@@ -15,6 +15,7 @@ def dashboard_keyboard(lang: str = "en", active_workout: bool = False) -> Inline
                 InlineKeyboardButton(text=t("menu_progress", lang), callback_data="dashboard:progress"),
             ],
             [InlineKeyboardButton(text=t("menu_profile", lang), callback_data="dashboard:profile")],
+            [InlineKeyboardButton(text="📚 История тренировок" if lang == "ru" else "📚 Workout history", callback_data="dashboard:workouts")],
             [InlineKeyboardButton(text=t("refresh", lang), callback_data="dashboard:refresh")],
         ]
     )
