@@ -29,9 +29,16 @@ async def _user_id(message: Message) -> int | None:
     return user.id if user is not None else None
 
 
+
+async def _reset_state_preserving_workout(state: FSMContext) -> None:
+    data = await state.get_data()
+    workout_context = {key: data[key] for key in ("workout_id", "exercise_id", "exercise_name", "set_number", "exercise_position", "previous_weight", "previous_reps", "editing_set_id", "editing_rpe") if key in data}
+    await state.clear()
+    if workout_context:
+        await state.update_data(**workout_context)
 @router.message(_matches_menu("food"))
 async def food_menu(message: Message, state: FSMContext) -> None:
-    await state.clear(); await state.set_state(FoodStates.meal)
+    await _reset_state_preserving_workout(state); await state.set_state(FoodStates.meal)
     lang = language_code(message.from_user)
     text = "🍽 <b>Добавить питание</b>\n\nВыбери приём пищи:" if lang == "ru" else "🍽 <b>Add nutrition</b>\n\nChoose a meal:"
     await message.answer(text, parse_mode="HTML", reply_markup=meal_keyboard(lang))
@@ -39,12 +46,13 @@ async def food_menu(message: Message, state: FSMContext) -> None:
 
 @router.message(_matches_menu("workout"))
 async def workout_menu(message: Message, state: FSMContext) -> None:
-    await open_workout_menu(message, state)
+    continue_session = bool((await state.get_data()).get("workout_id"))
+    await open_workout_menu(message, state, preserve_session=continue_session)
 
 
 @router.message(_matches_menu("weight"))
 async def weight_menu(message: Message, state: FSMContext) -> None:
-    await state.clear(); await state.set_state(WeightStates.value)
+    await _reset_state_preserving_workout(state); await state.set_state(WeightStates.value)
     lang = language_code(message.from_user)
     text = "⚖️ <b>Записать вес</b>\n\nВведи текущий вес в кг, например: 82.4" if lang == "ru" else "⚖️ <b>Log weight</b>\n\nEnter your current weight in kg, for example: 82.4"
     await message.answer(text, parse_mode="HTML", reply_markup=navigation_keyboard(lang=lang))
@@ -52,7 +60,7 @@ async def weight_menu(message: Message, state: FSMContext) -> None:
 
 @router.message(_matches_menu("progress"))
 async def progress_menu(message: Message, state: FSMContext) -> None:
-    await state.clear(); await state.set_state(ProgressStates.exercise)
+    await _reset_state_preserving_workout(state); await state.set_state(ProgressStates.exercise)
     lang = language_code(message.from_user)
     text = "📈 <b>Прогресс упражнения</b>\n\nКакое упражнение показать? Например: Жим лёжа" if lang == "ru" else "📈 <b>Exercise progress</b>\n\nWhich exercise should I show? For example: Bench press"
     await message.answer(text, parse_mode="HTML", reply_markup=navigation_keyboard(lang=lang))
