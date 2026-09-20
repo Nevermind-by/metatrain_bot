@@ -2,7 +2,7 @@ from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
-from app.bot.states import FoodStates, ProgressStates, WeightStates, WorkoutStates
+from app.bot.states import FoodStates, ProgressStates, WeightStates
 from app.handlers.dashboard import _render
 from app.handlers.workout import open_workout_menu
 from app.i18n import language_code
