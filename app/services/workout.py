@@ -48,6 +48,9 @@ class WorkoutService:
             raise ValueError("Invalid calories")
         return await self.repository.complete(workout_id, user_id, duration_minutes, calories_burned)
 
+    async def active_for_user(self, user_id: int) -> WorkoutEntry | None:
+        return await self.repository.active_for_user(user_id)
+
     async def recent(self, user_id: int, limit: int = 10) -> list[WorkoutEntry]:
         return await self.repository.recent(user_id, limit)
 
