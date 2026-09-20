@@ -40,4 +40,14 @@ jobs:
           if-no-files-found: error
 
       - name: Verify Ruff
-        run: ruff check .
+        run: |
+          set -o pipefail
+          ruff check . 2>&1 | tee ruff-output.log
+
+      - name: Upload Ruff output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruff-output-${{ github.run_id }}
+          path: ruff-output.log
+          if-no-files-found: error
