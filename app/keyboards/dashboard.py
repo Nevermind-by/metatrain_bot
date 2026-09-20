@@ -8,7 +8,7 @@ def dashboard_keyboard(lang: str = "en", active_workout: bool = False) -> Inline
         inline_keyboard=[
             [
                 InlineKeyboardButton(text=t("menu_food", lang), callback_data="dashboard:food"),
-                InlineKeyboardButton(text=t("menu_workout", lang), callback_data="dashboard:workout"),
+                InlineKeyboardButton(text=("▶️ Продолжить тренировку" if lang == "ru" else "▶️ Continue workout") if active_workout else t("menu_workout", lang), callback_data="dashboard:workout"),
             ],
             [
                 InlineKeyboardButton(text=t("menu_weight", lang), callback_data="dashboard:weight"),
