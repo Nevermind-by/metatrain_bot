@@ -41,6 +41,9 @@ class WorkoutService:
         return existing
 
 
+    async def cancel_active(self, *, user_id: int, workout_id: int) -> bool:
+        return await self.repository.cancel_active(workout_id, user_id)
+
     async def complete(self, *, user_id: int, workout_id: int, duration_minutes: int | None = None, calories_burned: float | None = None) -> WorkoutEntry | None:
         if duration_minutes is not None and duration_minutes < 0:
             raise ValueError("Invalid duration")
