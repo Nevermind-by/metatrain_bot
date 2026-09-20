@@ -40,7 +40,7 @@ class DashboardServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("Калории: <b>350</b> / 2500 ккал", result)
         self.assertIn("🥩 Белки: 7 г / 160 г", result)
         self.assertIn("⚖️ <b>Вес:</b> 80 кг", result)
-        self.assertIn("🏋️ Тренировок за 7 дней: 1", result)
+        self.assertIn("🏋️ <b>Тренировок за 7 дней:</b> 1", result)
 
     async def test_build_handles_missing_profile_and_weight(self):
         self.service.profile.get_profile.return_value = None
@@ -52,4 +52,4 @@ class DashboardServiceTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertIn("Калории: <b>0</b> ккал", result)
         self.assertIn("⚖️ <b>Вес:</b> пока нет измерений", result)
-        self.assertIn("🏋️ Тренировок за 7 дней: 0", result)
+        self.assertIn("🏋️ <b>Тренировок за 7 дней:</b> 0", result)
