@@ -114,7 +114,7 @@ async def _render_current_exercise(target: Message | CallbackQuery, state: FSMCo
             await target.message.edit_text("\n".join(lines), parse_mode="HTML", reply_markup=markup)
     else:
         await target.answer("\n".join(lines), parse_mode="HTML", reply_markup=markup)
-    await state.update_data(exercise_id=exercise.id, exercise_name=exercise.name, set_number=len(sets) + 1)
+    await state.update_data(exercise_id=exercise.id, exercise_name=exercise.name, set_number=len(sets) + 1, editing_set_id=None, editing_rpe=None)
 
 
 @router.callback_query(F.data.startswith("workout:current:exercise:"))
@@ -252,7 +252,7 @@ async def _start_selected_exercise(callback: CallbackQuery, state: FSMContext, e
     existing = await workout_service.repository.exercises_for_workout(workout.id)
     position = len(existing) + 1
     exercise = await workout_service.add_exercise(workout_id=workout.id, name=item.name_ru if lang == "ru" else item.name_en, position=position)
-    await state.update_data(workout_id=workout.id, exercise_id=exercise.id, exercise_name=exercise.name, set_number=1, exercise_position=position)
+    await state.update_data(workout_id=workout.id, exercise_id=exercise.id, exercise_name=exercise.name, set_number=1, exercise_position=position, editing_set_id=None, editing_rpe=None)
     await state.set_state(WorkoutStates.weight); await _show_first_set_prompt(callback, state, exercise.name, user_id)
 
 @router.callback_query(F.data.startswith("workout:exercise:"))
