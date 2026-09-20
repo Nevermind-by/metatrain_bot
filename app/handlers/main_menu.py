@@ -60,10 +60,12 @@ async def weight_menu(message: Message, state: FSMContext) -> None:
 
 @router.message(_matches_menu("progress"))
 async def progress_menu(message: Message, state: FSMContext) -> None:
-    await _reset_state_preserving_workout(state); await state.set_state(ProgressStates.exercise)
+    await _reset_state_preserving_workout(state)
+    await state.set_state(ProgressStates.exercise)
     lang = language_code(message.from_user)
-    text = "📈 <b>Прогресс упражнения</b>\n\nКакое упражнение показать? Например: Жим лёжа" if lang == "ru" else "📈 <b>Exercise progress</b>\n\nWhich exercise should I show? For example: Bench press"
-    await message.answer(text, parse_mode="HTML", reply_markup=navigation_keyboard(lang=lang))
+    text = "📈 <b>Прогресс упражнения</b>\n\nВыбери группу мышц или найди упражнение:" if lang == "ru" else "📈 <b>Exercise progress</b>\n\nChoose a muscle group or search for an exercise:"
+    from app.keyboards.progress import progress_categories
+    await message.answer(text, parse_mode="HTML", reply_markup=progress_categories(lang))
 
 
 @router.message(_matches_menu("dashboard"))
