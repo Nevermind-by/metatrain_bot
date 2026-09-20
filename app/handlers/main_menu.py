@@ -74,6 +74,12 @@ async def dashboard_menu(message: Message, state: FSMContext) -> None:
         await message.answer("Сначала создай профиль через /start." if lang == "ru" else "Create your profile with /start first.")
         return
     active_workout = bool((await state.get_data()).get("workout_id"))
+    if not active_workout:
+        from app.services.workout import WorkoutService
+        active = await WorkoutService().active_for_user(user_id)
+        if active is not None and active.id is not None:
+            active_workout = True
+            await state.update_data(workout_id=active.id)
     await _render(message, user_id, active_workout=active_workout)
 
 
