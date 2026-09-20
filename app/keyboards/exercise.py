@@ -63,6 +63,13 @@ def current_exercise_keyboard(set_ids: list[int], lang: str = "en") -> InlineKey
     ])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
+def delete_set_confirmation_keyboard(set_id: int, lang: str = "en") -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🗑️ Да, удалить" if lang == "ru" else "🗑️ Yes, delete", callback_data=f"workout:set:delete:confirm:{set_id}")],
+        [InlineKeyboardButton(text="↩️ Отмена" if lang == "ru" else "↩️ Cancel", callback_data="workout:set:delete:cancel")],
+    ])
+
+
 def workout_set_keyboard(lang: str = "en") -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="➕ Следующий подход" if lang == "ru" else "➕ Next set", callback_data="workout:set:next")],
