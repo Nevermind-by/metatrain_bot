@@ -147,7 +147,7 @@ async def workout_edit_set(callback: CallbackQuery, state: FSMContext) -> None:
     await callback.answer()
 
 
-@router.callback_query(F.data.regexp(r"^workout:set:delete:\\d+$"))
+@router.callback_query(F.data.regexp(r"^workout:set:delete:\d+$"))
 async def workout_delete_set(callback: CallbackQuery, state: FSMContext) -> None:
     lang = language_code(callback.from_user)
     user_id = await _user_id(callback.from_user.id)
