@@ -80,6 +80,8 @@ async def dashboard_menu(message: Message, state: FSMContext) -> None:
         if active is not None and active.id is not None:
             active_workout = True
             await state.update_data(workout_id=active.id)
+    if active_workout:
+        await state.set_state(None)
     await _render(message, user_id, active_workout=active_workout)
 
 
