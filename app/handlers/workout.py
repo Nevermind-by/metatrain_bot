@@ -76,7 +76,8 @@ async def workout_start(message: Message, state: FSMContext) -> None:
 
 @router.callback_query(F.data == "workout:menu")
 async def workout_menu(callback: CallbackQuery, state: FSMContext) -> None:
-    await open_workout_menu(callback, state, preserve_session=False)
+    preserve_session = bool((await state.get_data()).get("workout_id"))
+    await open_workout_menu(callback, state, preserve_session=preserve_session)
     await callback.answer()
 
 @router.callback_query(F.data == "workout:add")
@@ -314,8 +315,15 @@ async def workout_rpe(message: Message, state: FSMContext) -> None:
 
 @router.callback_query(F.data == "workout:set:next")
 async def workout_next_set(callback: CallbackQuery, state: FSMContext) -> None:
-    lang = language_code(callback.from_user); await state.set_state(WorkoutStates.weight); data = await state.get_data(); set_number = int(data.get("set_number", 1))
-    if callback.message is not None: await callback.message.edit_text(f"Подход {set_number}\n\nВес, кг:" if lang == "ru" else f"Set {set_number}\n\nWeight, kg:", reply_markup=navigation_keyboard(lang=lang))
+    lang = language_code(callback.from_user)
+    data = await state.get_data()
+    if not data.get("exercise_id") or not data.get("workout_id"):
+        await callback.answer("Сначала выбери упражнение." if lang == "ru" else "Choose an exercise first.", show_alert=True)
+        return
+    await state.set_state(WorkoutStates.weight)
+    set_number = int(data.get("set_number", 1))
+    if callback.message is not None:
+        await callback.message.edit_text(f"Подход {set_number}\n\nВес, кг:" if lang == "ru" else f"Set {set_number}\n\nWeight, kg:", reply_markup=navigation_keyboard(lang=lang))
     await callback.answer()
 
 @router.callback_query(F.data == "workout:finish")
