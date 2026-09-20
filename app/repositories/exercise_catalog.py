@@ -2,6 +2,7 @@ from app.database.connection import get_connection
 from app.models.exercise import ExerciseCatalogItem
 
 
+
 EXERCISES = (
     ("bench_press", "Жим штанги лёжа", "Bench press", "chest", "Грудь", "Chest", "Штанга", "Barbell", ("жим лёжа", "жим штанги"), ("bench press", "barbell bench press")),
     ("incline_bench_press", "Жим штанги на наклонной скамье", "Incline barbell bench press", "chest", "Грудь", "Chest", "Штанга", "Barbell", ("жим на наклонной", "наклонный жим"), ("incline bench",)),
