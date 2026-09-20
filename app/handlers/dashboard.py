@@ -113,9 +113,23 @@ async def dashboard_history(callback: CallbackQuery) -> None:
     await callback.answer()
 @router.callback_query(F.data == "dashboard:workout")
 async def dashboard_workout(callback: CallbackQuery, state: FSMContext) -> None:
-    await state.clear(); await state.set_state(WorkoutStates.category); lang = language_code(callback.from_user)
+    user = await _user(callback)
+    lang = language_code(callback.from_user)
+    if user is None:
+        await callback.answer("Сначала создай профиль" if lang == "ru" else "Create your profile first", show_alert=True)
+        return
+    active = await workout_service.active_for_user(user.id)
+    if active is not None and active.id is not None:
+        await state.update_data(workout_id=active.id)
+        from app.handlers.workout import _show_current_workout
+        await _show_current_workout(callback, state)
+        await callback.answer()
+        return
+    await state.clear()
+    await state.set_state(WorkoutStates.category)
     text = "🏋️ <b>Новая тренировка</b>\n\nВыбери группу мышц или найди упражнение:" if lang == "ru" else "🏋️ <b>New workout</b>\n\nChoose a muscle group or search for an exercise:"
-    if callback.message is not None: await callback.message.edit_text(text, parse_mode="HTML", reply_markup=exercise_categories(lang))
+    if callback.message is not None:
+        await callback.message.edit_text(text, parse_mode="HTML", reply_markup=exercise_categories(lang))
     await callback.answer()
 @router.callback_query(F.data == "dashboard:workouts")
 async def dashboard_workouts(callback: CallbackQuery) -> None:
