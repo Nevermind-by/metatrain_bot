@@ -6,7 +6,11 @@ from aiogram.types import CallbackQuery, Message
 from app.bot.states import ProgressStates, WeightStates
 from app.i18n import language_code
 from app.keyboards.navigation import navigation_keyboard
-from app.keyboards.progress import progress_categories, progress_exercise_list, progress_search_results
+from app.keyboards.progress import (
+    progress_categories,
+    progress_exercise_list,
+    progress_search_results,
+)
 from app.services.exercise_catalog import ExerciseCatalogService
 from app.services.user import UserService
 from app.services.weight import WeightService
