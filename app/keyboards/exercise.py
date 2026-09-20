@@ -59,6 +59,7 @@ def current_exercise_keyboard(set_ids: list[int], lang: str = "en") -> InlineKey
     rows.extend([
         [InlineKeyboardButton(text="➕ Следующий подход" if lang == "ru" else "➕ Next set", callback_data="workout:set:next")],
         [InlineKeyboardButton(text="◀️ Текущая тренировка" if lang == "ru" else "◀️ Current workout", callback_data="workout:current")],
+        [InlineKeyboardButton(text="✅ Завершить" if lang == "ru" else "✅ Finish workout", callback_data="workout:finish")],
         [InlineKeyboardButton(text="🏠 Дашборд" if lang == "ru" else "🏠 Dashboard", callback_data="dashboard:home")],
     ])
     return InlineKeyboardMarkup(inline_keyboard=rows)
