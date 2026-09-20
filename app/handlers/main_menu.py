@@ -67,13 +67,14 @@ async def progress_menu(message: Message, state: FSMContext) -> None:
 
 
 @router.message(_matches_menu("dashboard"))
-async def dashboard_menu(message: Message) -> None:
+async def dashboard_menu(message: Message, state: FSMContext) -> None:
     user_id = await _user_id(message)
     lang = language_code(message.from_user)
     if user_id is None:
         await message.answer("Сначала создай профиль через /start." if lang == "ru" else "Create your profile with /start first.")
         return
-    await _render(message, user_id)
+    active_workout = bool((await state.get_data()).get("workout_id"))
+    await _render(message, user_id, active_workout=active_workout)
 
 
 @router.message(_matches_menu("profile"))
