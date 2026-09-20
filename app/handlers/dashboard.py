@@ -12,6 +12,7 @@ from app.keyboards.exercise import exercise_categories
 from app.keyboards.food_flow import meal_keyboard
 from app.keyboards.navigation import navigation_keyboard
 from app.keyboards.workout_history import workout_history_keyboard
+from app.keyboards.progress import progress_categories
 from app.services.dashboard import DashboardService
 from app.services.food import MEALS, FoodService
 from app.services.profile import ProfileService
@@ -192,8 +193,12 @@ async def dashboard_weight(callback: CallbackQuery, state: FSMContext) -> None:
     await callback.answer()
 @router.callback_query(F.data == "dashboard:progress")
 async def dashboard_progress(callback: CallbackQuery, state: FSMContext) -> None:
-    await _reset_state_preserving_workout(state); await state.set_state(ProgressStates.exercise); lang = language_code(callback.from_user); text = "📈 <b>Прогресс упражнения</b>\n\nКакое упражнение показать?\nНапример: Жим лёжа" if lang == "ru" else "📈 <b>Exercise progress</b>\n\nWhich exercise should I show?\nFor example: Bench press"
-    if callback.message is not None: await callback.message.edit_text(text, parse_mode="HTML", reply_markup=navigation_keyboard(lang=lang))
+    await _reset_state_preserving_workout(state)
+    await state.set_state(ProgressStates.exercise)
+    lang = language_code(callback.from_user)
+    text = "📈 <b>Прогресс упражнения</b>\n\nВыбери группу мышц или найди упражнение:" if lang == "ru" else "📈 <b>Exercise progress</b>\n\nChoose a muscle group or search for an exercise:"
+    if callback.message is not None:
+        await callback.message.edit_text(text, parse_mode="HTML", reply_markup=progress_categories(lang))
     await callback.answer()
 @router.callback_query(F.data == "dashboard:profile")
 async def dashboard_profile(callback: CallbackQuery) -> None:
