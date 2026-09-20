@@ -55,7 +55,7 @@ async def _show_current_workout(target: Message | CallbackQuery, state: FSMConte
                 last = sets[-1]
                 lines.append(f"  {last.weight_kg:g} кг × {last.reps}" if lang == "ru" else f"  {last.weight_kg:g} kg × {last.reps}")
         text = "\n".join(lines)
-        markup = current_workout_keyboard(lang)
+        markup = current_workout_keyboard(lang, [exercise.id for exercise, _ in entries])
     if isinstance(target, CallbackQuery):
         if target.message is not None:
             await target.message.edit_text(text, parse_mode="HTML", reply_markup=markup)
@@ -85,6 +85,64 @@ async def workout_add(callback: CallbackQuery, state: FSMContext) -> None:
 async def workout_current(callback: CallbackQuery, state: FSMContext) -> None:
     await _show_current_workout(callback, state)
     await callback.answer()
+
+@router.callback_query(F.data.startswith("workout:current:exercise:"))
+async def workout_current_exercise(callback: CallbackQuery, state: FSMContext) -> None:
+    lang = language_code(callback.from_user)
+    user_id = await _user_id(callback.from_user.id)
+    if user_id is None:
+        await callback.answer("Профиль не найден" if lang == "ru" else "Profile not found", show_alert=True)
+        return
+    value = callback.data.rsplit(":", 1)[-1]
+    if not value.isdigit():
+        await callback.answer("Некорректное упражнение" if lang == "ru" else "Invalid exercise", show_alert=True)
+        return
+    exercise = await workout_service.get_exercise_for_user(int(value), user_id)
+    if exercise is None:
+        await callback.answer("Упражнение не найдено" if lang == "ru" else "Exercise not found", show_alert=True)
+        return
+    sets = await workout_service.repository.sets_for_exercise(exercise.id)
+    lines = [f"🏋️ <b>{exercise.name}</b>", ""]
+    if sets:
+        for index, item in enumerate(sets, 1):
+            rpe = f" · RPE {item.rpe:g}" if item.rpe is not None else ""
+            lines.append(f"{index}. {item.weight_kg:g} кг × {item.reps}{rpe}" if lang == "ru" else f"{index}. {item.weight_kg:g} kg × {item.reps}{rpe}")
+    else:
+        lines.append("Подходов пока нет." if lang == "ru" else "No sets yet.")
+    if callback.message is not None:
+        from app.keyboards.exercise import current_exercise_keyboard
+        await callback.message.edit_text("\\n".join(lines), parse_mode="HTML", reply_markup=current_exercise_keyboard([s.id for s in sets], lang))
+    await state.update_data(exercise_id=exercise.id, exercise_name=exercise.name, set_number=len(sets) + 1)
+    await callback.answer()
+
+@router.callback_query(F.data.startswith("workout:set:delete:"))
+async def workout_delete_set(callback: CallbackQuery, state: FSMContext) -> None:
+    lang = language_code(callback.from_user)
+    user_id = await _user_id(callback.from_user.id)
+    value = callback.data.rsplit(":", 1)[-1]
+    if user_id is None or not value.isdigit():
+        await callback.answer("Некорректный подход" if lang == "ru" else "Invalid set", show_alert=True)
+        return
+    deleted = await workout_service.delete_set(set_id=int(value), user_id=user_id)
+    if not deleted:
+        await callback.answer("Подход не найден" if lang == "ru" else "Set not found", show_alert=True)
+        return
+    data = await state.get_data()
+    exercise_id = data.get("exercise_id")
+    if exercise_id:
+        sets = await workout_service.repository.sets_for_exercise(int(exercise_id))
+        await state.update_data(set_number=len(sets) + 1)
+        exercise = await workout_service.get_exercise_for_user(int(exercise_id), user_id)
+        if exercise and callback.message is not None:
+            from app.keyboards.exercise import current_exercise_keyboard
+            lines = [f"🏋️ <b>{exercise.name}</b>", ""]
+            for index, item in enumerate(sets, 1):
+                rpe = f" · RPE {item.rpe:g}" if item.rpe is not None else ""
+                lines.append(f"{index}. {item.weight_kg:g} кг × {item.reps}{rpe}" if lang == "ru" else f"{index}. {item.weight_kg:g} kg × {item.reps}{rpe}")
+            if not sets:
+                lines.append("Подходов пока нет." if lang == "ru" else "No sets yet.")
+            await callback.message.edit_text("\\n".join(lines), parse_mode="HTML", reply_markup=current_exercise_keyboard([s.id for s in sets], lang))
+    await callback.answer("Удалено" if lang == "ru" else "Deleted")
 
 @router.callback_query(F.data.startswith("workout:category:"))
 async def workout_category(callback: CallbackQuery, state: FSMContext) -> None:
