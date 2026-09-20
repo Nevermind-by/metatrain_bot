@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Import USDA FoodData Central Branded Foods into MetaTrain.
 
 Uses a dedicated synchronous SQLite connection because the importer is a
@@ -13,7 +12,6 @@ import unicodedata
 from pathlib import Path
 
 from app.config.settings import settings
-from app.database.connection import init_database
 
 NUTRIENTS = {1008: "calories", 1003: "protein", 1004: "fat", 1005: "carbs", 1079: "fiber"}
 BATCH_SIZE = 5000
