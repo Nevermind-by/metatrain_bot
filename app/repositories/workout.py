@@ -103,6 +103,15 @@ class WorkoutRepository:
             row = await cursor.fetchone()
         return self._workout(row) if row else None
 
+    async def active_for_user(self, user_id: int) -> WorkoutEntry | None:
+        async with await get_connection() as connection:
+            cursor = await connection.execute(
+                "SELECT * FROM workout_entries WHERE user_id=? AND duration_minutes IS NULL ORDER BY performed_at DESC LIMIT 1",
+                (user_id,),
+            )
+            row = await cursor.fetchone()
+        return self._workout(row) if row else None
+
     async def recent(self, user_id: int, limit: int = 10) -> list[WorkoutEntry]:
         async with await get_connection() as connection:
             cursor = await connection.execute("SELECT * FROM workout_entries WHERE user_id=? ORDER BY performed_at DESC LIMIT ?", (user_id, limit))
