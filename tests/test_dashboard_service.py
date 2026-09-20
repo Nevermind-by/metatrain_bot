@@ -35,7 +35,7 @@ class DashboardServiceTests(unittest.IsolatedAsyncioTestCase):
             WorkoutEntry(2, 1, "Old", None, None, None, now - timedelta(days=8)),
         ]
 
-        result = await self.service.build(1)
+        result = await self.service.build(1, lang="ru")
 
         self.assertIn("🔥 Калории: 350 / 2500", result)
         self.assertIn("🥩 Белки: 7 г / 160 г", result)
