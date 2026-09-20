@@ -3,7 +3,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from app.i18n import t
 
 
-def dashboard_keyboard(lang: str = "en") -> InlineKeyboardMarkup:
+def dashboard_keyboard(lang: str = "en", active_workout: bool = False) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
