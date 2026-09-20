@@ -27,7 +27,19 @@ async def open_workout_menu(message: Message | CallbackQuery, state: FSMContext,
     lang = language_code(message.from_user)
     data = await state.get_data() if preserve_session else {}
     if not preserve_session:
+        user_id = await _user_id(message.from_user.id)
+        active = await workout_service.active_for_user(user_id) if user_id is not None else None
         await state.clear()
+        if active is not None and active.id is not None:
+            data = {"workout_id": active.id}
+            await state.update_data(**data)
+    else:
+        if data.get("workout_id") is None:
+            user_id = await _user_id(message.from_user.id)
+            active = await workout_service.active_for_user(user_id) if user_id is not None else None
+            if active is not None and active.id is not None:
+                data["workout_id"] = active.id
+                await state.update_data(workout_id=active.id)
     await state.set_state(WorkoutStates.category)
     text = (("🏋️ <b>Добавить упражнение</b>\n\nВыбери группу мышц или найди упражнение:" if lang == "ru" else "🏋️ <b>Add exercise</b>\n\nChoose a muscle group or search for an exercise:") if data.get("workout_id") else ("🏋️ <b>Новая тренировка</b>\n\nВыбери группу мышц или найди упражнение:" if lang == "ru" else "🏋️ <b>New workout</b>\n\nChoose a muscle group or search for an exercise:"))
     markup = exercise_categories(lang)
@@ -42,6 +54,11 @@ async def _show_current_workout(target: Message | CallbackQuery, state: FSMConte
     data = await state.get_data()
     workout_id = data.get("workout_id")
     user_id = await _user_id(target.from_user.id)
+    if user_id is not None and not workout_id:
+        active = await workout_service.active_for_user(user_id)
+        if active is not None and active.id is not None:
+            workout_id = active.id
+            await state.update_data(workout_id=workout_id)
     if not workout_id or user_id is None:
         text = "Активной тренировки нет." if lang == "ru" else "There is no active workout."
         markup = navigation_keyboard(lang=lang)
