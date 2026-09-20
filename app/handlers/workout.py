@@ -48,7 +48,8 @@ async def _show_current_workout(target: Message | CallbackQuery, state: FSMConte
     else:
         workout = await workout_service.get_workout_for_user(int(workout_id), user_id)
         entries = await workout_service.repository.exercises_with_sets_for_workout(int(workout_id)) if workout else []
-        lines = ["📋 <b>Текущая тренировка</b>", ""] if lang == "ru" else ["📋 <b>Current workout</b>", ""]
+        elapsed_minutes = max(0, int((datetime.now(UTC) - workout.performed_at).total_seconds() // 60)) if workout else 0
+        lines = ["📋 <b>Текущая тренировка</b>", f"⏱ Время: {elapsed_minutes} мин", ""] if lang == "ru" else ["📋 <b>Current workout</b>", f"⏱ Duration: {elapsed_minutes} min", ""]
         if not entries:
             lines.append("Пока нет упражнений." if lang == "ru" else "No exercises yet.")
         for exercise, sets in entries:
@@ -344,6 +345,8 @@ async def workout_finish(callback: CallbackQuery, state: FSMContext) -> None:
     await workout_service.complete(user_id=user_id, workout_id=int(workout_id), duration_minutes=duration_minutes)
     lines = ["✅ <b>Тренировка завершена</b>" if lang == "ru" else "✅ <b>Workout finished</b>", ""]
     lines.append(f"Упражнений: {len(entries)}" if lang == "ru" else f"Exercises: {len(entries)}")
+    for exercise, sets in entries:
+        lines.append(f"• {exercise.name} — {len(sets)} " + ("подх." if lang == "ru" else "sets"))
     lines.append(f"Подходов: {total_sets}" if lang == "ru" else f"Sets: {total_sets}")
     lines.append(f"Объём: {volume:g} кг" if lang == "ru" else f"Volume: {volume:g} kg")
     lines.append(f"Время: {duration_minutes} мин" if lang == "ru" else f"Duration: {duration_minutes} min")
