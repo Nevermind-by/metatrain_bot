@@ -42,10 +42,11 @@ async def _reset_state_preserving_workout(state: FSMContext) -> None:
     if workout_context:
         await state.update_data(**workout_context)
 @router.message(Command("dashboard", "stats"))
-async def dashboard_handler(message: Message) -> None:
+async def dashboard_handler(message: Message, state: FSMContext) -> None:
     user = await _user(message); lang = language_code(message.from_user)
     if user is None: await message.answer("Сначала создай профиль через /start." if lang == "ru" else "Create your profile with /start first."); return
-    await _render(message, user.id)
+    active_workout = bool((await state.get_data()).get("workout_id"))
+    await _render(message, user.id, active_workout=active_workout)
 @router.callback_query(F.data == "dashboard:home")
 async def dashboard_home(callback: CallbackQuery, state: FSMContext) -> None:
     user = await _user(callback); lang = language_code(callback.from_user)
