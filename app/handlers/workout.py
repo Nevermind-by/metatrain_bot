@@ -384,6 +384,9 @@ async def workout_cancel(message: Message, state: FSMContext) -> None:
     lang = language_code(message)
     user_id = await _user_id(message.from_user.id) if message.from_user else None
     workout_id = (await state.get_data()).get("workout_id")
+    if user_id is not None and not workout_id:
+        active = await workout_service.active_for_user(user_id)
+        workout_id = active.id if active is not None else None
     if user_id is not None and workout_id:
         await workout_service.cancel_active(user_id=user_id, workout_id=int(workout_id))
     await state.clear()
