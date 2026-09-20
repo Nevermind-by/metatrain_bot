@@ -86,9 +86,15 @@ async def _show_current_workout(target: Message | CallbackQuery, state: FSMConte
 @router.message(Command("workout"))
 async def workout_start(message: Message, state: FSMContext) -> None:
     if message.from_user is None: return
-    if await _user_id(message.from_user.id) is None:
+    user_id = await _user_id(message.from_user.id)
+    if user_id is None:
         lang = language_code(message)
         await message.answer("Сначала создай профиль через /start." if lang == "ru" else "Create your profile with /start first.")
+        return
+    active = await workout_service.active_for_user(user_id)
+    if active is not None and active.id is not None:
+        await state.update_data(workout_id=active.id)
+        await _show_current_workout(message, state)
         return
     await open_workout_menu(message, state)
 
@@ -264,7 +270,9 @@ async def _start_selected_exercise(callback: CallbackQuery, state: FSMContext, e
     data = await state.get_data(); workout_id = data.get("workout_id")
     workout = await workout_service.get_workout_for_user(int(workout_id), user_id) if workout_id else None
     if workout is None:
-        category_name = item.muscle_group_ru if lang == "ru" else item.muscle_group_en
+        workout = await workout_service.active_for_user(user_id)
+    if workout is None:
+        category_name = "Силовая тренировка" if lang == "ru" else "Strength workout"
         workout = await workout_service.start(user_id=user_id, name=category_name)
     existing = await workout_service.repository.exercises_for_workout(workout.id)
     position = len(existing) + 1
@@ -373,7 +381,13 @@ async def workout_finish(callback: CallbackQuery, state: FSMContext) -> None:
 
 @router.message(Command("cancel"))
 async def workout_cancel(message: Message, state: FSMContext) -> None:
-    lang = language_code(message); await state.clear(); await message.answer("Тренировка отменена." if lang == "ru" else "Workout cancelled.", reply_markup=navigation_keyboard(lang=lang))
+    lang = language_code(message)
+    user_id = await _user_id(message.from_user.id) if message.from_user else None
+    workout_id = (await state.get_data()).get("workout_id")
+    if user_id is not None and workout_id:
+        await workout_service.cancel_active(user_id=user_id, workout_id=int(workout_id))
+    await state.clear()
+    await message.answer("Тренировка отменена." if lang == "ru" else "Workout cancelled.", reply_markup=navigation_keyboard(lang=lang))
 
 @router.message(Command("workouts"))
 async def workouts(message: Message) -> None:
