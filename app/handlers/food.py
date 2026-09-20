@@ -7,7 +7,11 @@ from app.bot.states import FoodStates
 from app.i18n import language_code
 from app.keyboards.food_flow import meal_keyboard
 from app.keyboards.navigation import navigation_keyboard
-from app.keyboards.product import catalog_keyboard, catalog_start_keyboard, product_keyboard
+from app.keyboards.product import (
+    catalog_keyboard,
+    catalog_start_keyboard,
+    product_keyboard,
+)
 from app.repositories.recipe import RecipeRepository
 from app.services.food import MEALS, FoodService
 from app.services.food_catalog import FoodCatalogService
