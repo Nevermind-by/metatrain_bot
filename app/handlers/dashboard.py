@@ -22,10 +22,10 @@ async def _user(target: Message | CallbackQuery):
     user = await user_service.get_by_telegram_id(target.from_user.id)
     if user is None or user.id is None: return None
     return user
-async def _render(target: Message | CallbackQuery, user_id: int) -> bool:
+async def _render(target: Message | CallbackQuery, user_id: int, *, active_workout: bool = False) -> bool:
     lang = language_code(target.from_user)
     text = await dashboard_service.build(user_id, lang=lang)
-    markup = dashboard_keyboard(lang)
+    markup = dashboard_keyboard(lang, active_workout=active_workout)
     if isinstance(target, CallbackQuery):
         if target.message is not None:
             try: await target.message.edit_text(text, parse_mode="HTML", reply_markup=markup)
@@ -43,12 +43,18 @@ async def dashboard_handler(message: Message) -> None:
 async def dashboard_home(callback: CallbackQuery, state: FSMContext) -> None:
     user = await _user(callback); lang = language_code(callback.from_user)
     if user is None: await callback.answer("Сначала создай профиль" if lang == "ru" else "Create your profile first", show_alert=True); return
-    await state.clear(); await _render(callback, user.id); await callback.answer()
+    data = await state.get_data()
+    active_workout = bool(data.get("workout_id"))
+    if not active_workout:
+        await state.clear()
+    await _render(callback, user.id, active_workout=active_workout)
+    await callback.answer()
 @router.callback_query(F.data == "dashboard:refresh")
-async def dashboard_refresh(callback: CallbackQuery) -> None:
+async def dashboard_refresh(callback: CallbackQuery, state: FSMContext) -> None:
     user = await _user(callback); lang = language_code(callback.from_user)
     if user is None: await callback.answer("Сначала создай профиль" if lang == "ru" else "Create your profile first", show_alert=True); return
-    updated = await _render(callback, user.id)
+    active_workout = bool((await state.get_data()).get("workout_id"))
+    updated = await _render(callback, user.id, active_workout=active_workout)
     await callback.answer(("Обновлено" if updated else "Всё актуально") if lang == "ru" else ("Updated" if updated else "Already up to date"))
 @router.callback_query(F.data == "dashboard:food")
 async def dashboard_food(callback: CallbackQuery, state: FSMContext) -> None:
