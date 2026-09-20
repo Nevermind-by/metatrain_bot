@@ -34,6 +34,13 @@ async def _render(target: Message | CallbackQuery, user_id: int, *, active_worko
                 return False
     else: await target.answer(text, parse_mode="HTML", reply_markup=markup)
     return True
+
+async def _reset_state_preserving_workout(state: FSMContext) -> None:
+    data = await state.get_data()
+    workout_context = {key: data[key] for key in ("workout_id", "exercise_id", "exercise_name", "set_number", "exercise_position", "previous_weight", "previous_reps", "editing_set_id", "editing_rpe") if key in data}
+    await state.clear()
+    if workout_context:
+        await state.update_data(**workout_context)
 @router.message(Command("dashboard", "stats"))
 async def dashboard_handler(message: Message) -> None:
     user = await _user(message); lang = language_code(message.from_user)
@@ -58,7 +65,7 @@ async def dashboard_refresh(callback: CallbackQuery, state: FSMContext) -> None:
     await callback.answer(("Обновлено" if updated else "Всё актуально") if lang == "ru" else ("Updated" if updated else "Already up to date"))
 @router.callback_query(F.data == "dashboard:food")
 async def dashboard_food(callback: CallbackQuery, state: FSMContext) -> None:
-    await state.clear(); await state.set_state(FoodStates.meal); lang = language_code(callback.from_user)
+    await _reset_state_preserving_workout(state); await state.set_state(FoodStates.meal); lang = language_code(callback.from_user)
     if callback.message is not None: await callback.message.edit_text("🍽 <b>Питание</b>\n\nВыбери действие:" if lang == "ru" else "🍽 <b>Nutrition</b>\n\nChoose an action:", parse_mode="HTML", reply_markup=meal_keyboard(lang))
     await callback.answer()
 @router.callback_query(F.data == "dashboard:today")
@@ -108,12 +115,12 @@ async def dashboard_workouts(callback: CallbackQuery) -> None:
     await callback.answer()
 @router.callback_query(F.data == "dashboard:weight")
 async def dashboard_weight(callback: CallbackQuery, state: FSMContext) -> None:
-    await state.clear(); await state.set_state(WeightStates.value); lang = language_code(callback.from_user); text = "⚖️ <b>Записать вес</b>\n\nВведи текущий вес в кг, например: 82.4" if lang == "ru" else "⚖️ <b>Log weight</b>\n\nEnter your current weight in kg, e.g. 82.4"
+    await _reset_state_preserving_workout(state); await state.set_state(WeightStates.value); lang = language_code(callback.from_user); text = "⚖️ <b>Записать вес</b>\n\nВведи текущий вес в кг, например: 82.4" if lang == "ru" else "⚖️ <b>Log weight</b>\n\nEnter your current weight in kg, e.g. 82.4"
     if callback.message is not None: await callback.message.edit_text(text, parse_mode="HTML", reply_markup=navigation_keyboard(lang=lang))
     await callback.answer()
 @router.callback_query(F.data == "dashboard:progress")
 async def dashboard_progress(callback: CallbackQuery, state: FSMContext) -> None:
-    await state.clear(); await state.set_state(ProgressStates.exercise); lang = language_code(callback.from_user); text = "📈 <b>Прогресс упражнения</b>\n\nКакое упражнение показать?\nНапример: Жим лёжа" if lang == "ru" else "📈 <b>Exercise progress</b>\n\nWhich exercise should I show?\nFor example: Bench press"
+    await _reset_state_preserving_workout(state); await state.set_state(ProgressStates.exercise); lang = language_code(callback.from_user); text = "📈 <b>Прогресс упражнения</b>\n\nКакое упражнение показать?\nНапример: Жим лёжа" if lang == "ru" else "📈 <b>Exercise progress</b>\n\nWhich exercise should I show?\nFor example: Bench press"
     if callback.message is not None: await callback.message.edit_text(text, parse_mode="HTML", reply_markup=navigation_keyboard(lang=lang))
     await callback.answer()
 @router.callback_query(F.data == "dashboard:profile")
