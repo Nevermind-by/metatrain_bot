@@ -162,6 +162,19 @@ async def _show_progress(target: Message | CallbackQuery, state: FSMContext, exe
         for item in result["sets"][:10]:
             rpe = f" • RPE {item.rpe:g}" if item.rpe is not None else ""
             lines.append(f"• {item.weight_kg:g} × {item.reps}{rpe}")
+        if result["sessions"]:
+            lines.extend(["", "Последние тренировки:" if lang == "ru" else "Recent workouts:"])
+            for session in result["sessions"][:5]:
+                performed = session["performed_at"]
+                try:
+                    label = performed[8:10] + "." + performed[5:7] + "." + performed[:4]
+                except (TypeError, IndexError):
+                    label = str(performed)[:10]
+                lines.append(
+                    f"• {label} — {session['max_weight']:g} кг · {session['volume']:g} кг"
+                    if lang == "ru"
+                    else f"• {label} — {session['max_weight']:g} kg · {session['volume']:g} kg"
+                )
         text = "\n".join(lines)
         markup = navigation_keyboard(lang=lang, back_callback="progress:menu")
 
