@@ -1,18 +1,20 @@
 from collections import defaultdict
 from datetime import datetime
+
 from aiogram import F, Router
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
+
 from app.bot.states import FoodStates, ProgressStates, WeightStates, WorkoutStates
 from app.i18n import language_code
 from app.keyboards.dashboard import dashboard_keyboard
 from app.keyboards.exercise import exercise_categories
 from app.keyboards.food_flow import meal_keyboard
 from app.keyboards.navigation import navigation_keyboard
-from app.keyboards.workout_history import workout_history_keyboard
 from app.keyboards.progress import progress_categories
+from app.keyboards.workout_history import workout_history_keyboard
 from app.services.dashboard import DashboardService
 from app.services.food import MEALS, FoodService
 from app.services.profile import ProfileService
