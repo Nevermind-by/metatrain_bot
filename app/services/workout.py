@@ -27,6 +27,19 @@ class WorkoutService:
 
     async def delete_set(self, *, set_id: int, user_id: int) -> bool:
         return await self.repository.delete_set_for_user(set_id, user_id)
+\n    async def update_set(self, *, set_id: int, user_id: int, weight_kg: float, reps: int, rpe: float | None = None) -> WorkoutSet | None:
+        if weight_kg < 0 or reps < 1 or (rpe is not None and not 1 <= rpe <= 10):
+            raise ValueError("Invalid set")
+        existing = await self.repository.get_set_for_user(set_id, user_id)
+        if existing is None:
+            return None
+        existing.weight_kg = weight_kg
+        existing.reps = reps
+        existing.rpe = rpe
+        if not await self.repository.update_set_for_user(existing, user_id):
+            return None
+        return existing
+
 
     async def complete(self, *, user_id: int, workout_id: int, duration_minutes: int | None = None, calories_burned: float | None = None) -> WorkoutEntry | None:
         if duration_minutes is not None and duration_minutes < 0:
