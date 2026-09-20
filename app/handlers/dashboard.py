@@ -11,6 +11,7 @@ from app.keyboards.dashboard import dashboard_keyboard
 from app.keyboards.exercise import exercise_categories
 from app.keyboards.food_flow import meal_keyboard
 from app.keyboards.navigation import navigation_keyboard
+from app.keyboards.workout_history import workout_history_keyboard
 from app.services.dashboard import DashboardService
 from app.services.food import MEALS, FoodService
 from app.services.profile import ProfileService
@@ -133,16 +134,53 @@ async def dashboard_workout(callback: CallbackQuery, state: FSMContext) -> None:
     await callback.answer()
 @router.callback_query(F.data == "dashboard:workouts")
 async def dashboard_workouts(callback: CallbackQuery) -> None:
-    user = await _user(callback); lang = language_code(callback.from_user)
-    if user is None: await callback.answer("Сначала создай профиль" if lang == "ru" else "Create your profile first", show_alert=True); return
+    user = await _user(callback)
+    lang = language_code(callback.from_user)
+    if user is None:
+        await callback.answer("Сначала создай профиль" if lang == "ru" else "Create your profile first", show_alert=True)
+        return
     entries = await workout_service.recent(user.id)
-    if not entries: text = "🏋️ <b>История тренировок</b>\n\nТренировок пока нет." if lang == "ru" else "🏋️ <b>Workout history</b>\n\nNo workouts yet."
+    if not entries:
+        text = "🏋️ <b>История тренировок</b>\n\nТренировок пока нет." if lang == "ru" else "🏋️ <b>Workout history</b>\n\nNo workouts yet."
+        markup = navigation_keyboard(lang=lang)
     else:
-        lines = ["🏋️ <b>История тренировок</b>" if lang == "ru" else "🏋️ <b>Workout history</b>", ""]
-        for item in entries: lines.append(f"#{item.id} {item.name} — {item.performed_at.strftime('%d.%m.%Y %H:%M')}")
-        text = "\n".join(lines)
-    if callback.message is not None: await callback.message.edit_text(text, parse_mode="HTML", reply_markup=navigation_keyboard(lang=lang))
+        text = "🏋️ <b>История тренировок</b>\n\nВыбери тренировку:" if lang == "ru" else "🏋️ <b>Workout history</b>\n\nChoose a workout:"
+        markup = workout_history_keyboard(entries, lang)
+    if callback.message is not None:
+        await callback.message.edit_text(text, parse_mode="HTML", reply_markup=markup)
     await callback.answer()
+
+
+@router.callback_query(F.data.startswith("dashboard:workout:history:"))
+async def dashboard_workout_history_detail(callback: CallbackQuery) -> None:
+    user = await _user(callback)
+    lang = language_code(callback.from_user)
+    value = callback.data.rsplit(":", 1)[-1]
+    if user is None or not value.isdigit():
+        await callback.answer("Некорректная тренировка" if lang == "ru" else "Invalid workout", show_alert=True)
+        return
+    workout = await workout_service.get_workout_for_user(int(value), user.id)
+    if workout is None:
+        await callback.answer("Тренировка не найдена" if lang == "ru" else "Workout not found", show_alert=True)
+        return
+    entries = await workout_service.repository.exercises_with_sets_for_workout(workout.id)
+    total_sets = sum(len(sets) for _, sets in entries)
+    volume = sum(item.weight_kg * item.reps for _, sets in entries for item in sets)
+    status = ("🟡 В процессе" if workout.duration_minutes is None else "✅ Завершена") if lang == "ru" else ("🟡 In progress" if workout.duration_minutes is None else "✅ Completed")
+    duration = workout.duration_minutes if workout.duration_minutes is not None else max(0, int((datetime.now(workout.performed_at.tzinfo) - workout.performed_at).total_seconds() // 60))
+    lines = [f"🏋️ <b>{workout.name}</b>", "", status, f"📅 {workout.performed_at.strftime('%d.%m.%Y %H:%M')}", ""]
+    for exercise, sets in entries:
+        lines.append(f"• <b>{exercise.name}</b> — {len(sets)} " + ("подх." if lang == "ru" else "sets"))
+        for index, item in enumerate(sets, 1):
+            lines.append(f"  {index}. {item.weight_kg:g} кг × {item.reps}" if lang == "ru" else f"  {index}. {item.weight_kg:g} kg × {item.reps}")
+    lines.extend(["", f"Подходов: {total_sets}" if lang == "ru" else f"Sets: {total_sets}", f"Объём: {volume:g} кг" if lang == "ru" else f"Volume: {volume:g} kg", f"Время: {duration} мин" if lang == "ru" else f"Duration: {duration} min"])
+    if workout.calories_burned is not None:
+        lines.append(f"🔥 Калории: {workout.calories_burned:g}" if lang == "ru" else f"🔥 Calories: {workout.calories_burned:g}")
+    markup = navigation_keyboard(lang=lang, back_callback="dashboard:workouts", back_text="◀️ История" if lang == "ru" else "◀️ History")
+    if callback.message is not None:
+        await callback.message.edit_text("\n".join(lines), parse_mode="HTML", reply_markup=markup)
+    await callback.answer()
+
 @router.callback_query(F.data == "dashboard:weight")
 async def dashboard_weight(callback: CallbackQuery, state: FSMContext) -> None:
     await _reset_state_preserving_workout(state); await state.set_state(WeightStates.value); lang = language_code(callback.from_user); text = "⚖️ <b>Записать вес</b>\n\nВведи текущий вес в кг, например: 82.4" if lang == "ru" else "⚖️ <b>Log weight</b>\n\nEnter your current weight in kg, e.g. 82.4"
