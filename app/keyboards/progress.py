@@ -1,6 +1,7 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
+
 _GROUPS = (
     ("chest", ("💪 Грудь", "💪 Chest")),
     ("back", ("🪽 Спина", "🪽 Back")),
