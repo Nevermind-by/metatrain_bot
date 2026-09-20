@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from aiogram import Router, F
+from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
@@ -8,7 +8,16 @@ from aiogram.types import CallbackQuery, Message
 from app.bot.states import WorkoutStates
 from app.i18n import language_code
 from app.keyboards.dashboard import dashboard_keyboard
-from app.keyboards.exercise import current_exercise_keyboard, current_workout_keyboard, delete_set_confirmation_keyboard, exercise_categories, exercise_list, exercise_search_result, previous_set_keyboard, workout_set_keyboard
+from app.keyboards.exercise import (
+    current_exercise_keyboard,
+    current_workout_keyboard,
+    delete_set_confirmation_keyboard,
+    exercise_categories,
+    exercise_list,
+    exercise_search_result,
+    previous_set_keyboard,
+    workout_set_keyboard,
+)
 from app.keyboards.navigation import navigation_keyboard
 from app.services.exercise_catalog import ExerciseCatalogService
 from app.services.user import UserService
