@@ -94,6 +94,15 @@ class WorkoutRepository:
             await connection.commit()
         return True
 
+    async def cancel_active(self, workout_id: int, user_id: int) -> bool:
+        async with await get_connection() as connection:
+            cursor = await connection.execute(
+                "DELETE FROM workout_entries WHERE id=? AND user_id=? AND duration_minutes IS NULL",
+                (workout_id, user_id),
+            )
+            await connection.commit()
+        return cursor.rowcount > 0
+
     async def complete(self, workout_id: int, user_id: int, duration_minutes: int | None, calories_burned: float | None) -> WorkoutEntry | None:
         async with await get_connection() as connection:
             cursor = await connection.execute("UPDATE workout_entries SET duration_minutes=?, calories_burned=? WHERE id=? AND user_id=?", (duration_minutes, calories_burned, workout_id, user_id))
