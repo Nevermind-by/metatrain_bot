@@ -39,7 +39,7 @@ class DashboardServiceTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertIn("Калории: <b>350</b> / 2500 ккал", result)
         self.assertIn("🥩 Белки: 7 г / 160 г", result)
-        self.assertIn("⚖️ Вес: 80 кг", result)
+        self.assertIn("⚖️ <b>Вес:</b> 80 кг", result)
         self.assertIn("🏋️ Тренировок за 7 дней: 1", result)
 
     async def test_build_handles_missing_profile_and_weight(self):
@@ -51,5 +51,5 @@ class DashboardServiceTests(unittest.IsolatedAsyncioTestCase):
         result = await self.service.build(1, lang="ru")
 
         self.assertIn("Калории: <b>0</b> ккал", result)
-        self.assertIn("⚖️ Вес: нет измерений", result)
+        self.assertIn("⚖️ <b>Вес:</b> пока нет измерений", result)
         self.assertIn("🏋️ Тренировок за 7 дней: 0", result)
