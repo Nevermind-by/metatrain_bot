@@ -18,7 +18,7 @@ from app.handlers.progress import router as progress_router
 from app.handlers.recipe import router as recipe_router
 from app.handlers.start import router as start_router
 from app.handlers.webapp import router as webapp_router
-from app.handlers.workout_session import router as workout_router
+from app.handlers.workout import router as workout_router
 
 logger = logging.getLogger(__name__)
 
