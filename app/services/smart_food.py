@@ -112,7 +112,15 @@ async def extract_food_with_ai(text: str, image_data_url: str | None = None) -> 
                 json={"model": settings.openai_model, "input": [{"role": "user", "content": content}]},
             )
             response.raise_for_status()
-            output = response.json().get("output_text", "")
+            response_data = response.json()
+        output = response_data.get("output_text", "")
+        if not output:
+            parts = []
+            for item in response_data.get("output", []):
+                for part in item.get("content", []):
+                    if part.get("type") == "output_text":
+                        parts.append(part.get("text", ""))
+            output = "".join(parts)
         data = _json_output(output)
         result = []
         for item in data.get("items", []):
