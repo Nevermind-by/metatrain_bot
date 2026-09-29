@@ -7,6 +7,8 @@ class Settings(BaseSettings):
     web_app_url: str | None = None
     render_external_url: str | None = None
     webhook_secret: str | None = None
+    openai_api_key: str | None = None
+    openai_model: str = "gpt-5.6-luna"
 
     model_config = SettingsConfigDict(env_file=".env")
 

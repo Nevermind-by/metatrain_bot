@@ -34,6 +34,7 @@ TEXTS = {
     "weight": {"ru": "⚖️ Вес", "en": "⚖️ Weight"},
     "activity": {"ru": "🏃 Активность", "en": "🏃 Activity"},
     "goal": {"ru": "🎯 Цель", "en": "🎯 Goal"},
+    "smart_food": {"ru": "🧠 Быстрый ввод питания", "en": "🧠 Smart food entry"},
     "male": {"ru": "👨 Мужчина", "en": "👨 Male"},
     "female": {"ru": "👩 Женщина", "en": "👩 Female"},
     "sedentary": {"ru": "🪑 Минимальная", "en": "🪑 Sedentary"},

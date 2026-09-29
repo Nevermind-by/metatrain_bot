@@ -27,6 +27,12 @@ class FoodStates(StatesGroup):
     recipe = State()
 
 
+class SmartFoodStates(StatesGroup):
+    input = State()
+    resolving = State()
+    confirm = State()
+
+
 class ProductStates(StatesGroup):
     name = State()
     calories = State()

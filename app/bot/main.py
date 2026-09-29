@@ -19,6 +19,7 @@ from app.handlers.products import router as products_router
 from app.handlers.profile import router as profile_router
 from app.handlers.progress import router as progress_router
 from app.handlers.recipe import router as recipe_router
+from app.handlers.smart_food import router as smart_food_router
 from app.handlers.start import router as start_router
 from app.handlers.webapp import router as webapp_router
 from app.handlers.workout import router as workout_router
@@ -64,6 +65,7 @@ for router in (
     webapp_router,
     profile_router,
     food_router,
+    smart_food_router,
     products_router,
     recipe_router,
     progress_router,
