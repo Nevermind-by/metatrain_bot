@@ -5,7 +5,7 @@ from io import BytesIO
 
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message, InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import (\n    CallbackQuery,\n    InlineKeyboardButton,\n    InlineKeyboardMarkup,\n    Message,\n)
 
 from app.bot.states import SmartFoodStates
 from app.config.settings import settings
