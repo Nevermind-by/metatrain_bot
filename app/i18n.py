@@ -19,6 +19,8 @@ TEXTS = {
     "menu_workout": {"ru": "🏋️ Тренировка", "en": "🏋️ Workout"},
     "menu_weight": {"ru": "⚖️ Вес", "en": "⚖️ Weight"},
     "menu_progress": {"ru": "📈 Прогресс", "en": "📈 Progress"},
+    "menu_dashboard": {"ru": "🏠 Дашборд", "en": "🏠 Dashboard"},
+    "menu_placeholder": {"ru": "Выбери раздел", "en": "Choose a section"},
     "menu_profile": {"ru": "👤 Профиль", "en": "👤 Profile"},
     "dashboard": {"ru": "🏠 Дашборд", "en": "🏠 Dashboard"},
     "refresh": {"ru": "🔄 Обновить", "en": "🔄 Refresh"},
