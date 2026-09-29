@@ -71,14 +71,19 @@ def parse_food_text(text: str) -> list[ParsedFoodItem]:
             items.append(parsed)
 
     if len(items) <= 1 and len(QUANTITY_RE.findall(text)) > 1:
+        matches = list(QUANTITY_RE.finditer(text))
         items = []
-        for match in QUANTITY_RE.finditer(text):
-            left = text[max(0, match.start() - 70):match.start()]
-            candidate = re.split(r",|;|\s+и\s+|\s+and\s+", left, flags=re.IGNORECASE)[-1]
-            candidate = re.sub(r"^(?:съел|съела|потом|затем)\s+", "", candidate, flags=re.IGNORECASE)
-            name = _clean(candidate)
+        for index, match in enumerate(matches):
+            amount = float(match.group("amount").replace(",", "."))
+            next_start = matches[index + 1].start() if index + 1 < len(matches) else len(text)
+            after = _clean(text[match.end():next_start])
+            after = re.split(r",|;|\s+и\s+|\s+and\s+", after, maxsplit=1, flags=re.IGNORECASE)[0]
+            before = text[:match.start()]
+            before = re.split(r",|;|\s+и\s+|\s+and\s+", before, flags=re.IGNORECASE)[-1]
+            before = re.sub(r"^(?:съел|съела|потом|затем)\s+", "", before, flags=re.IGNORECASE)
+            name = _clean(after or before)
             if name:
-                items.append(ParsedFoodItem(name, float(match.group("amount").replace(",", "."))))
+                items.append(ParsedFoodItem(name, amount))
     return items
 
 
