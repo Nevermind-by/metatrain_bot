@@ -1,18 +1,17 @@
 services:
-  - type: worker
+  - type: web
     name: metatrain-bot
     runtime: docker
-    plan: starter
+    plan: free
     region: frankfurt
     dockerfilePath: ./Dockerfile
     dockerContext: .
     autoDeploy: true
+    healthCheckPath: /healthz
     envVars:
       - key: BOT_TOKEN
         sync: false
       - key: DATABASE_PATH
-        value: /var/data/metatrain.db
-    disk:
-      name: metatrain-data
-      mountPath: /var/data
-      sizeGB: 10
+        value: data/metatrain.db
+      - key: WEBHOOK_SECRET
+        sync: false
