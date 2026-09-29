@@ -7,10 +7,7 @@ DEFAULT_LANGUAGE = "en"
 
 
 def language_code(user: TelegramUser | None) -> str:
-    """Return the UI language from Telegram, defaulting to English."""
-    if user is None:
-        return DEFAULT_LANGUAGE
-    code = (user.language_code or "").lower().split("-")[0]
+    code = (user.language_code or "").lower().split("-")[0] if user else ""
     return code if code in SUPPORTED_LANGUAGES else DEFAULT_LANGUAGE
 
 
@@ -34,6 +31,7 @@ TEXTS = {
     "weight": {"ru": "⚖️ Вес", "en": "⚖️ Weight"},
     "activity": {"ru": "🏃 Активность", "en": "🏃 Activity"},
     "goal": {"ru": "🎯 Цель", "en": "🎯 Goal"},
+    "smart_food": {"ru": "🧠 Быстрый ввод питания", "en": "🧠 Smart food entry"},
     "male": {"ru": "👨 Мужчина", "en": "👨 Male"},
     "female": {"ru": "👩 Женщина", "en": "👩 Female"},
     "sedentary": {"ru": "🪑 Минимальная", "en": "🪑 Sedentary"},
@@ -61,8 +59,8 @@ TEXTS = {
     "choose_activity": {"ru": "Выбери уровень активности:", "en": "Choose your activity level:"},
     "choose_goal": {"ru": "Какая у тебя цель?", "en": "What is your goal?"},
     "welcome": {
-        "ru": "<b>Добро пожаловать в MetaTrain! 👋</b>\n\nТвой личный помощник для питания, тренировок и прогресса.\n\nВ одном месте ты сможешь:\n🥗 вести питание и смотреть дневную норму\n🏋️ записывать тренировки и отслеживать результаты\n⚖️ контролировать вес\n📈 видеть свой прогресс и историю\n\nНикаких сложных команд — после настройки профиля всё будет доступно с главного экрана.\n\n<b>Давай начнём с нескольких вопросов о тебе.</b>",
-        "en": "<b>Welcome to MetaTrain! 👋</b>\n\nYour personal assistant for nutrition, workouts, and progress.\n\nIn one place you can:\n🥗 track food and your daily targets\n🏋️ log workouts and track results\n⚖️ track your weight\n📈 see your progress and history\n\nNo complicated commands — after setup, everything is available from the main screen.\n\n<b>Let's start with a few questions about you.</b>",
+        "ru": "<b>Добро пожаловать в MetaTrain! 👋</b>\n\nТвой личный помощник для питания, тренировок и прогресса.",
+        "en": "<b>Welcome to MetaTrain! 👋</b>\n\nYour personal assistant for nutrition, workouts, and progress.",
     },
 }
 
