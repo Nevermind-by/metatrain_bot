@@ -52,11 +52,12 @@ def _parse_line(line: str) -> ParsedFoodItem | None:
     line = _clean(line)
     if not line or line.casefold() in MEALS:
         return None
-    match = QUANTITY_RE.search(line)
-    if not match:
+    matches = list(QUANTITY_RE.finditer(line))
+    if not matches:
         return ParsedFoodItem(line, None)
+    match = matches[-1]
     amount = float(match.group("amount").replace(",", "."))
-    before = _clean(mine[:match.start()])
+    before = _clean(line[:match.start()])
     after = _clean(line[match.end():])
     name = _clean(f"{before} {after}")
     return ParsedFoodItem(name, amount) if name else None
