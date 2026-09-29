@@ -1,0 +1,19 @@
+services:
+  - type: worker
+    name: metatrain-bot
+    runtime: docker
+    plan: starter
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    autoDeploy: true
+    maxShutdownDelaySeconds: 60
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: DATABASE_PATH
+        value: /var/data/metatrain.db
+    disk:
+      name: metatrain-data
+      mountPath: /var/data
+      sizeGB: 10
