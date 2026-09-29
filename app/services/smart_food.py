@@ -29,7 +29,7 @@ MEALS = {
 }
 
 QUANTITY_RE = re.compile(
-    r"(?P<amount>\d+(?:[.,]\d+)?)\s*(?:г|гр|грамм(?:а|ов)?|g|gram(?:s)?)?\b",
+    r"(?P<amount>\d+(?:[.,]\d+)?)\s*(?:г|гр|грамм(?:а|ов)?|g|gram(?:s)?)?\b(?!\s*%)",
     re.IGNORECASE,
 )
 
