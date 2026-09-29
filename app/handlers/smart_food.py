@@ -87,8 +87,9 @@ async def process(message: Message, state: FSMContext, text: str, image_url: str
 @router.callback_query(F.data == "food:smart:start")
 async def smart_start(callback: CallbackQuery, state: FSMContext):
     lang = language_code(callback.from_user)
+    current = await state.get_data()
     await state.set_state(SmartFoodStates.input)
-    await state.update_data(meal=None)
+    await state.update_data(meal=current.get("meal"))
     text = (
         "🧠 <b>Быстрый ввод питания</b>\n\n"
         "Напиши продукты как удобно. Шаблон не нужен: можно менять порядок, ставить граммы до или после продукта, использовать «г», «гр», «грамм».\n\n"
