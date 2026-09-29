@@ -60,7 +60,7 @@ TEXTS = {
     "weight_range": {"ru": "Вес должен быть от 30 до 300 кг.", "en": "Weight must be between 30 and 300 kg."},
     "choose_gender": {"ru": "Выбери пол:", "en": "Choose your gender:"},
     "choose_activity": {"ru": "Выбери уровень активности:", "en": "Choose your activity level:"},
-    "choose_goal": {"ru": "Какая у тебя цель?", "en": "What is your goal:"},
+    "choose_goal": {"ru": "Какая у тебя цель?", "en": "What is your goal?"},
     "welcome": {
         "ru": "<b>Добро пожаловать в MetaTrain! 👋</b>\n\nТвой личный помощник для питания, тренировок и прогресса.\n\nВ одном месте ты сможешь:\n🥗 вести питание и смотреть дневную норму\n🏋️ записывать тренировки и отслеживать результаты\n⚖️ контролировать вес\n📈 видеть свой прогресс и историю\n\nНикаких сложных команд — после настройки профиля всё будет доступно с главного экрана.\n\n<b>Давай начнём с нескольких вопросов о тебе.</b>",
         "en": "<b>Welcome to MetaTrain! 👋</b>\n\nYour personal assistant for nutrition, workouts, and progress.\n\nIn one place you can:\n🥗 track food and your daily targets\n🏋️ log workouts and track results\n⚖️ track your weight\n📈 see your progress and history\n\nNo complicated commands — after setup, everything is available from the main screen.\n\n<b>Let's start with a few questions about you.</b>",
