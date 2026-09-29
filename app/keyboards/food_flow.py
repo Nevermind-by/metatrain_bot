@@ -1,11 +1,13 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
+from app.i18n import t
 
-def meal_keyboard() -> InlineKeyboardMarkup:
+
+def meal_keyboard(lang: str = "en") -> InlineKeyboardMarkup:
+    meals = {
+        "ru": [("🍳 Завтрак", "breakfast"), ("🍲 Обед", "lunch"), ("🍽 Ужин", "dinner"), ("🍎 Перекус", "snack")],
+        "en": [("🍳 Breakfast", "breakfast"), ("🍲 Lunch", "lunch"), ("🍽 Dinner", "dinner"), ("🍎 Snack", "snack")],
+    }
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🍳 Завтрак", callback_data="food:meal:breakfast")],
-        [InlineKeyboardButton(text="🍲 Обед", callback_data="food:meal:lunch")],
-        [InlineKeyboardButton(text="🍽 Ужин", callback_data="food:meal:dinner")],
-        [InlineKeyboardButton(text="🍎 Перекус", callback_data="food:meal:snack")],
-        [InlineKeyboardButton(text="🏠 Дашборд", callback_data="dashboard:home")],
-    ])
+        [InlineKeyboardButton(text=text, callback_data=f"food:meal:{value}")] for text, value in meals.get(lang, meals["en"])
+    ] + [[InlineKeyboardButton(text=t("dashboard", lang), callback_data="dashboard:home")]])

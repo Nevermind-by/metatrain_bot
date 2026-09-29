@@ -25,6 +25,21 @@ class WorkoutRepository:
             await connection.commit()
         return workout_set
 
+    async def latest_set_for_exercise(self, user_id: int, exercise_name: str) -> WorkoutSet | None:
+        async with await get_connection() as connection:
+            cursor = await connection.execute(
+                """SELECT s.*
+                   FROM workout_sets s
+                   JOIN workout_exercises e ON e.id=s.exercise_id
+                   JOIN workout_entries w ON w.id=e.workout_id
+                   WHERE w.user_id=? AND lower(e.name)=lower(?)
+                   ORDER BY w.performed_at DESC, s.set_number DESC
+                   LIMIT 1""",
+                (user_id, exercise_name.strip()),
+            )
+            row = await cursor.fetchone()
+        return WorkoutSet(row["id"], row["exercise_id"], row["set_number"], row["weight_kg"], row["reps"], row["rpe"]) if row else None
+
     async def sets_for_exercise(self, exercise_id: int) -> list[WorkoutSet]:
         async with await get_connection() as connection:
             cursor = await connection.execute("SELECT * FROM workout_sets WHERE exercise_id=? ORDER BY set_number", (exercise_id,))
@@ -38,9 +53,53 @@ class WorkoutRepository:
             result.append((exercise, await self.sets_for_exercise(exercise.id)))
         return result
 
+    async def update_set_for_user(self, workout_set: WorkoutSet, user_id: int) -> bool:
+        async with await get_connection() as connection:
+            cursor = await connection.execute(
+                """UPDATE workout_sets
+                   SET weight_kg=?, reps=?, rpe=?
+                   WHERE id=? AND exercise_id IN (
+                       SELECT e.id FROM workout_exercises e
+                       JOIN workout_entries w ON w.id=e.workout_id
+                       WHERE w.user_id=?
+                   )""",
+                (workout_set.weight_kg, workout_set.reps, workout_set.rpe, workout_set.id, user_id),
+            )
+            await connection.commit()
+        return cursor.rowcount > 0
+
     async def delete_set_for_user(self, set_id: int, user_id: int) -> bool:
         async with await get_connection() as connection:
-            cursor = await connection.execute("DELETE FROM workout_sets WHERE id=? AND exercise_id IN (SELECT e.id FROM workout_exercises e JOIN workout_entries w ON w.id=e.workout_id WHERE w.user_id=?)", (set_id, user_id))
+            cursor = await connection.execute(
+                "DELETE FROM workout_sets WHERE id=? AND exercise_id IN (SELECT e.id FROM workout_exercises e JOIN workout_entries w ON w.id=e.workout_id WHERE w.user_id=?)",
+                (set_id, user_id),
+            )
+            if cursor.rowcount == 0:
+                await connection.commit()
+                return False
+            await connection.execute(
+                """UPDATE workout_sets
+                   SET set_number = (
+                       SELECT COUNT(*) FROM workout_sets newer
+                       WHERE newer.exercise_id=workout_sets.exercise_id
+                         AND newer.id <= workout_sets.id
+                   )
+                   WHERE exercise_id IN (
+                       SELECT e.id FROM workout_exercises e
+                       JOIN workout_entries w ON w.id=e.workout_id
+                       WHERE w.user_id=?
+                   )""",
+                (user_id,),
+            )
+            await connection.commit()
+        return True
+
+    async def cancel_active(self, workout_id: int, user_id: int) -> bool:
+        async with await get_connection() as connection:
+            cursor = await connection.execute(
+                "DELETE FROM workout_entries WHERE id=? AND user_id=? AND duration_minutes IS NULL",
+                (workout_id, user_id),
+            )
             await connection.commit()
         return cursor.rowcount > 0
 
@@ -50,6 +109,15 @@ class WorkoutRepository:
             await connection.commit()
             if cursor.rowcount == 0: return None
             cursor = await connection.execute("SELECT * FROM workout_entries WHERE id=? AND user_id=?", (workout_id, user_id))
+            row = await cursor.fetchone()
+        return self._workout(row) if row else None
+
+    async def active_for_user(self, user_id: int) -> WorkoutEntry | None:
+        async with await get_connection() as connection:
+            cursor = await connection.execute(
+                "SELECT * FROM workout_entries WHERE user_id=? AND duration_minutes IS NULL ORDER BY performed_at DESC LIMIT 1",
+                (user_id,),
+            )
             row = await cursor.fetchone()
         return self._workout(row) if row else None
 

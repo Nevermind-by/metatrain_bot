@@ -1,28 +1,37 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
+from app.i18n import t
 
-def gender_edit_keyboard() -> InlineKeyboardMarkup:
+
+def _footer(lang: str) -> list[InlineKeyboardButton]:
+    return [
+        InlineKeyboardButton(text=t("profile", lang), callback_data="profile:show"),
+        InlineKeyboardButton(text=t("dashboard", lang), callback_data="dashboard:home"),
+    ]
+
+
+def gender_edit_keyboard(lang: str = "en") -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="👨 Мужчина", callback_data="profile:gender:male"), InlineKeyboardButton(text="👩 Женщина", callback_data="profile:gender:female")],
-        [InlineKeyboardButton(text="◀️ Профиль", callback_data="profile:show"), InlineKeyboardButton(text="🏠 Дашборд", callback_data="dashboard:home")],
+        [InlineKeyboardButton(text=t("male", lang), callback_data="profile:gender:male"), InlineKeyboardButton(text=t("female", lang), callback_data="profile:gender:female")],
+        _footer(lang),
     ])
 
 
-def activity_edit_keyboard() -> InlineKeyboardMarkup:
+def activity_edit_keyboard(lang: str = "en") -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🪑 Минимальная", callback_data="profile:activity:sedentary")],
-        [InlineKeyboardButton(text="🚶 Лёгкая", callback_data="profile:activity:light")],
-        [InlineKeyboardButton(text="🏃 Средняя", callback_data="profile:activity:moderate")],
-        [InlineKeyboardButton(text="🏋️ Высокая", callback_data="profile:activity:high")],
-        [InlineKeyboardButton(text="🔥 Очень высокая", callback_data="profile:activity:very_high")],
-        [InlineKeyboardButton(text="◀️ Профиль", callback_data="profile:show"), InlineKeyboardButton(text="🏠 Дашборд", callback_data="dashboard:home")],
+        [InlineKeyboardButton(text=t("sedentary", lang), callback_data="profile:activity:sedentary")],
+        [InlineKeyboardButton(text=t("light", lang), callback_data="profile:activity:light")],
+        [InlineKeyboardButton(text=t("moderate", lang), callback_data="profile:activity:moderate")],
+        [InlineKeyboardButton(text=t("high", lang), callback_data="profile:activity:high")],
+        [InlineKeyboardButton(text=t("very_high", lang), callback_data="profile:activity:very_high")],
+        _footer(lang),
     ])
 
 
-def goal_edit_keyboard() -> InlineKeyboardMarkup:
+def goal_edit_keyboard(lang: str = "en") -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🔥 Похудеть", callback_data="profile:goal:lose")],
-        [InlineKeyboardButton(text="⚖️ Поддерживать вес", callback_data="profile:goal:maintain")],
-        [InlineKeyboardButton(text="💪 Набрать массу", callback_data="profile:goal:gain")],
-        [InlineKeyboardButton(text="◀️ Профиль", callback_data="profile:show"), InlineKeyboardButton(text="🏠 Дашборд", callback_data="dashboard:home")],
+        [InlineKeyboardButton(text=t("lose", lang), callback_data="profile:goal:lose")],
+        [InlineKeyboardButton(text=t("maintain", lang), callback_data="profile:goal:maintain")],
+        [InlineKeyboardButton(text=t("gain", lang), callback_data="profile:goal:gain")],
+        _footer(lang),
     ])

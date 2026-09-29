@@ -47,7 +47,7 @@ class WeightStates(StatesGroup):
 
 
 class WorkoutStates(StatesGroup):
-    name = State()
+    category = State()
     exercise = State()
     weight = State()
     reps = State()

@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, feature/food-final4]
+    branches: [main, dev]
   pull_request:
 
 env:
@@ -27,7 +27,27 @@ jobs:
         run: python -m pip install "ruff>=0.15.20"
 
       - name: Run tests
-        run: python -m unittest discover -s tests -p 'test_*.py' -v
+        run: |
+          set -o pipefail
+          python -m unittest discover -s tests -p 'test_*.py' -v 2>&1 | tee test-output.log
+
+      - name: Upload test output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-output-${{ github.run_id }}
+          path: test-output.log
+          if-no-files-found: error
 
       - name: Verify Ruff
-        run: ruff check .
+        run: |
+          set -o pipefail
+          ruff check . 2>&1 | tee ruff-output.log
+
+      - name: Upload Ruff output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruff-output-${{ github.run_id }}
+          path: ruff-output.log
+          if-no-files-found: error

@@ -35,12 +35,12 @@ class DashboardServiceTests(unittest.IsolatedAsyncioTestCase):
             WorkoutEntry(2, 1, "Old", None, None, None, now - timedelta(days=8)),
         ]
 
-        result = await self.service.build(1)
+        result = await self.service.build(1, lang="ru")
 
-        self.assertIn("🔥 Калории: 350 / 2500", result)
+        self.assertIn("Калории: <b>350</b> / 2500 ккал", result)
         self.assertIn("🥩 Белки: 7 г / 160 г", result)
-        self.assertIn("⚖️ Вес: 80 кг", result)
-        self.assertIn("🏋️ Тренировок за 7 дней: 1", result)
+        self.assertIn("⚖️ <b>Вес:</b> 80 кг", result)
+        self.assertIn("🏋️ <b>Тренировок за 7 дней:</b> 1", result)
 
     async def test_build_handles_missing_profile_and_weight(self):
         self.service.profile.get_profile.return_value = None
@@ -48,8 +48,8 @@ class DashboardServiceTests(unittest.IsolatedAsyncioTestCase):
         self.service.weight.latest.return_value = None
         self.service.workout.recent.return_value = []
 
-        result = await self.service.build(1)
+        result = await self.service.build(1, lang="ru")
 
-        self.assertIn("🔥 Калории: 0", result)
-        self.assertIn("⚖️ Вес: нет измерений", result)
-        self.assertIn("🏋️ Тренировок за 7 дней: 0", result)
+        self.assertIn("Калории: <b>0</b> ккал", result)
+        self.assertIn("⚖️ <b>Вес:</b> пока нет измерений", result)
+        self.assertIn("🏋️ <b>Тренировок за 7 дней:</b> 0", result)

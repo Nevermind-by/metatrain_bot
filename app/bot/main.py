@@ -22,13 +22,13 @@ from app.handlers.workout import router as workout_router
 
 logger = logging.getLogger(__name__)
 
-BOT_NAME = "MetaTrain — твоя форма"
-BOT_SHORT_DESCRIPTION = "Питание, тренировки и прогресс — в одном месте."
+BOT_NAME = "MetaTrain | Fitness & Nutrition"
+BOT_SHORT_DESCRIPTION = "Питание, тренировки и прогресс - в одном месте."
 BOT_DESCRIPTION = (
-    "MetaTrain — твой помощник по питанию, тренировкам и прогрессу.\n\n"
+    "MetaTrain - твой помощник по питанию, тренировкам и прогрессу.\n\n"
     "Настрой профиль, получи персональную дневную норму, веди питание и тренировки, "
     "контролируй вес и следи за результатами.\n\n"
-    "Всё управление — через понятный дашборд внутри Telegram."
+    "Всё управление - через понятный дашборд внутри Telegram."
 )
 
 BOT_COMMANDS = [
@@ -57,6 +57,7 @@ async def main() -> None:
     dispatcher = Dispatcher()
     for router in (
         start_router,
+        workout_router,
         main_menu_router,
         webapp_router,
         profile_router,
@@ -66,7 +67,6 @@ async def main() -> None:
         progress_router,
         dashboard_router,
         history_router,
-        workout_router,
     ):
         dispatcher.include_router(router)
 
