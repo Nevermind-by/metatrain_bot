@@ -5,6 +5,8 @@ class Settings(BaseSettings):
     bot_token: str
     database_path: str = "data/metatrain.db"
     web_app_url: str | None = None
+    render_external_url: str | None = None
+    webhook_secret: str | None = None
 
     model_config = SettingsConfigDict(env_file=".env")
 

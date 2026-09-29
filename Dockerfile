@@ -13,4 +13,4 @@ RUN python -m pip install --no-cache-dir --upgrade pip \
 
 COPY . .
 
-CMD ["python", "-m", "app.bot.main"]
+CMD ["sh", "-c", "python -m uvicorn app.bot.main:app --host 0.0.0.0 --port ${PORT:-10000}"]
